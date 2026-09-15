@@ -1,0 +1,1604 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HCB · Panel de Call Center y Leads</title>
+<style>
+/* =========================================================
+   HCB · PANEL DE CALL CENTER Y LEADS
+   Prototipo funcional en HTML/CSS/JS plano (sin frameworks ni backend).
+   -----------------------------------------------------------------
+   AVISO PARA INFORMÁTICA (léase antes de tocar el código):
+   - El login de este archivo es SIMULADO (cualquier usuario/contraseña
+     no vacíos entra). Sirve para mostrar el concepto de "acceso nominal"
+     -- hay que sustituirlo por el sistema de autenticación real del
+     hospital y sus servidores de seguridad.
+   - La persistencia usa `window.storage` (API de almacenamiento de
+     Claude.ai para previsualizar artefactos). Hay que sustituirla por
+     llamadas a la base de datos real (ver hoja "09 - CAMPOS BBDD LEADS"
+     del Excel del protocolo para el diccionario de campos exacto).
+   - La regla de negocio "las Observaciones solo se pueden AÑADIR, nunca
+     editar ni borrar" SÍ está implementada a nivel de interfaz (no hay
+     ningún botón de editar/borrar una línea ya guardada) pero debe
+     reforzarse también en el backend/base de datos real.
+   ========================================================= */
+
+:root{
+  --teal:#1F6F78;
+  --teal-dark:#16515A;
+  --teal-darker:#0F3438;
+  --mint:#EAF5F5;
+  --mint2:#DCEEF0;
+  --amber:#E8A33D;
+  --amber-dark:#B97F1F;
+  --red:#C0392B;
+  --red-bg:#FBE4E1;
+  --green:#1E7A3B;
+  --green-bg:#DDF3E2;
+  --grey:#6B7B7E;
+  --grey-bg:#F2F2F2;
+  --ink:#27363A;
+  --white:#FFFFFF;
+  --font-head: Georgia, 'Cambria', 'Times New Roman', serif;
+  --font-body: 'Segoe UI', Arial, Helvetica, sans-serif;
+  --radius: 10px;
+  --shadow: 0 2px 10px rgba(15,52,56,0.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--mint);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;}
+#app{min-height:100vh;display:flex;flex-direction:column;}
+h1,h2,h3{font-family:var(--font-head);color:var(--teal-dark);margin:0 0 6px 0;}
+a{color:var(--teal-dark);}
+button{font-family:var(--font-body);cursor:pointer;}
+input,select,textarea{font-family:var(--font-body);font-size:14px;}
+.container{max-width:1080px;margin:0 auto;padding:24px 20px 60px;width:100%;}
+.small{font-size:12.5px;color:var(--grey);}
+.muted{color:var(--grey);}
+.hidden{display:none !important;}
+
+/* ---------- top bar ---------- */
+.topbar{background:var(--teal-darker);color:var(--white);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-weight:bold;font-size:18px;}
+.topbar .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--amber);}
+.topbar nav{display:flex;gap:6px;flex-wrap:wrap;}
+.topbar nav button{background:transparent;border:1px solid rgba(255,255,255,0.25);color:var(--mint2);padding:7px 14px;border-radius:20px;font-size:13px;}
+.topbar nav button.active{background:var(--teal);color:var(--white);border-color:var(--teal);}
+.topbar .session{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mint2);}
+.topbar .session .lock{opacity:.85;}
+.topbar .session button{background:none;border:none;color:var(--mint2);text-decoration:underline;font-size:12.5px;padding:0;}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:8px;padding:11px 18px;font-size:14.5px;font-weight:600;transition:filter .12s;}
+.btn:hover{filter:brightness(0.94);}
+.btn-primary{background:var(--teal);color:var(--white);}
+.btn-dark{background:var(--teal-dark);color:var(--white);}
+.btn-amber{background:var(--amber);color:var(--white);}
+.btn-outline{background:var(--white);color:var(--teal-dark);border:1.5px solid var(--teal);}
+.btn-danger{background:var(--red);color:var(--white);}
+.btn-ghost{background:transparent;color:var(--teal-dark);border:1px solid var(--mint2);}
+.btn-sm{padding:7px 12px;font-size:13px;}
+.btn[disabled]{opacity:.5;cursor:not-allowed;}
+.btn-block{width:100%;justify-content:center;}
+
+/* ---------- cards / layout ---------- */
+.card{background:var(--white);border:1px solid var(--mint2);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.card + .card{margin-top:16px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media (max-width:820px){ .grid-2,.grid-3{grid-template-columns:1fr;} }
+
+.kicker{text-transform:uppercase;letter-spacing:1.5px;font-size:11.5px;color:var(--amber-dark);font-weight:700;margin-bottom:6px;}
+
+/* ---------- form fields ---------- */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;color:var(--grey);margin-bottom:4px;font-weight:600;}
+.field input[type=text], .field input[type=tel], .field input[type=date], .field input[type=time], .field input[type=datetime-local], .field select, .field textarea{
+  width:100%;padding:10px 12px;border:1px solid #C9D7D8;border-radius:8px;background:var(--mint);color:var(--ink);
+}
+.field textarea{resize:vertical;min-height:70px;}
+.radio-group{display:flex;flex-direction:column;gap:8px;}
+.radio-option{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid var(--mint2);border-radius:8px;cursor:pointer;background:var(--white);}
+.radio-option:hover{border-color:var(--teal);}
+.radio-option input{margin-top:3px;}
+.radio-option .opt-title{font-weight:600;color:var(--ink);}
+.radio-option .opt-sub{font-size:12.5px;color:var(--grey);}
+
+/* ---------- badges / pills ---------- */
+.badge{display:inline-block;padding:4px 11px;border-radius:14px;font-size:12px;font-weight:700;color:var(--white);white-space:nowrap;}
+.pill-outcome{display:inline-block;padding:8px 16px;border-radius:20px;font-weight:700;font-size:13.5px;color:var(--white);}
+
+/* ---------- script box (guion a decir) ---------- */
+.script-box{background:var(--mint);border-left:4px solid var(--teal);border-radius:6px;padding:12px 14px;margin:10px 0;font-style:italic;color:var(--ink);}
+.script-label{font-style:normal;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--teal-dark);display:block;margin-bottom:4px;}
+.aviso-box{background:var(--red-bg);border-left:4px solid var(--red);border-radius:6px;padding:12px 14px;margin:10px 0;color:#7A241C;font-size:13.5px;}
+.aviso-box b{color:var(--red);}
+.dev-tag{display:inline-block;background:var(--amber);color:white;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle;}
+
+/* ---------- table (leads panel) ---------- */
+table.leads{width:100%;border-collapse:collapse;background:var(--white);border-radius:var(--radius);overflow:hidden;}
+table.leads th{background:var(--teal-dark);color:var(--white);text-align:left;padding:10px 12px;font-size:12.5px;}
+table.leads td{padding:10px 12px;border-bottom:1px solid var(--mint2);font-size:13.5px;}
+table.leads tr:hover{background:var(--mint);cursor:pointer;}
+.kpi-card{background:var(--mint);border-radius:var(--radius);padding:16px;text-align:center;}
+.kpi-card .num{font-family:var(--font-head);font-size:32px;font-weight:700;color:var(--teal);}
+.kpi-card .lbl{font-size:11.5px;color:var(--teal-dark);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+
+/* ---------- observaciones log ---------- */
+.log-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:4px;}
+.log-entry{background:#F7FAFA;border:1px solid #E4E9E9;border-radius:8px;padding:10px 12px;}
+.log-entry .meta{font-size:11.5px;font-weight:700;color:var(--teal-dark);}
+.log-entry .txt{font-size:13.5px;color:var(--ink);margin-top:2px;}
+.add-comment-row{display:flex;gap:8px;margin-top:10px;}
+.add-comment-row textarea{flex:1;}
+.lock-note{font-size:11.5px;color:var(--grey);font-style:italic;margin-top:6px;}
+
+/* ---------- modal ---------- */
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,52,56,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--white);border-radius:var(--radius);max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:22px;}
+.modal h3{margin-bottom:10px;}
+.modal-close-row{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+.wa-text{background:var(--mint);border-radius:8px;padding:14px;font-size:13.5px;white-space:pre-wrap;margin:10px 0;}
+
+/* ---------- objeciones floating button ---------- */
+.fab-objeciones{position:fixed;bottom:22px;right:22px;background:var(--teal-dark);color:var(--white);border:none;border-radius:24px;padding:12px 18px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-weight:700;font-size:13px;z-index:40;}
+
+/* ---------- login ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--teal-darker),var(--teal-dark));}
+.login-card{background:var(--white);border-radius:14px;padding:36px 34px;width:380px;max-width:92vw;box-shadow:0 10px 40px rgba(0,0,0,.3);}
+.login-card .logo{font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--teal-dark);margin-bottom:2px;}
+.login-card .logo-sub{font-size:12px;color:var(--grey);margin-bottom:22px;}
+.login-note{font-size:11.5px;color:var(--grey);margin-top:14px;border-top:1px dashed var(--mint2);padding-top:10px;}
+
+/* ---------- wizard progress ---------- */
+.steps-bar{display:flex;gap:6px;margin-bottom:18px;}
+.steps-bar .seg{flex:1;height:5px;border-radius:3px;background:var(--mint2);}
+.steps-bar .seg.done{background:var(--teal);}
+
+/* ---------- footer ---------- */
+.footer-note{margin-top:40px;padding-top:16px;border-top:1px solid var(--mint2);font-size:11.5px;color:var(--grey);}
+</style>
+</head>
+<body>
+<div id="app"><!-- rendered by JS --></div>
+
+<script>
+/* ============================================================
+   1) DATOS DEL PROTOCOLO (extraídos del Excel HCB_Protocolo_
+      CallCenter_Unificado.xlsx). Traducir/editar aquí, no en las
+      funciones de render, si cambia el contenido del guion.
+   ============================================================ */
+
+const RAMA_CLINICA = [
+  {grupo:"Enfermería", motivo:"Enfermería — catálogo de prestaciones", accion:"Cita presencial.", explicacion:"Le cito (día, hora, ubicación).", salida:"CITA_DIRECTA"},
+  {grupo:"Enfermería", motivo:"Enfermería — demanda", accion:"Cita telefónica.", explicacion:"Enfermería le llamará el día de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Pediatría", motivo:"Pediatría — primera consulta", accion:"Cita telefónica.", explicacion:"El médico le llamará el día de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Pediatría", motivo:"Pediatría — revisión", accion:"Cita presencial.", explicacion:"El médico le llamará el día de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Matrona", motivo:"Matrona — consulta", accion:"Cita presencial en Cerner Millennium.", explicacion:"La matrona le llamará el día de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Matrona", motivo:"Matrona — resultados", accion:"Cita telefónica para informar de resultados.", explicacion:"La matrona le llamará el día de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Salud Mental", motivo:"Salud Mental", accion:"Abrir gestión de CASO, contacto en 48h.", explicacion:"Hemos notificado a la unidad administrativa de Salud Mental; en 48h le darán cita. Anote su localizador.", salida:"GESTION_CASO"},
+  {grupo:"Sexología / Planificación", motivo:"Sexología", accion:"Cita presencial.", explicacion:"Le cito (día, hora, ubicación).", salida:"CITA_DIRECTA"},
+  {grupo:"Sexología / Planificación", motivo:"Planificación Familiar (general)", accion:"Cita presencial.", explicacion:"Le facilitamos una cita presencial (día, hora, lugar).", salida:"CITA_DIRECTA"},
+  {grupo:"Sexología / Planificación", motivo:"Planificación Familiar — DIU / Implante / IVE", accion:"Cita telefónica.", explicacion:"Le facilitamos una cita telefónica; el servicio se pondrá en contacto con usted.", salida:"CITA_DIRECTA"},
+  {grupo:"Odontología", motivo:"Odontopediatría", accion:"Cita telefónica.", explicacion:"El servicio se pondrá en contacto con usted.", salida:"CITA_DIRECTA"},
+  {grupo:"Odontología", motivo:"Odonto-estomatología", accion:"Cita telefónica.", explicacion:"El servicio se pondrá en contacto con usted.", salida:"CITA_DIRECTA"},
+  {grupo:"Trabajo Social", motivo:"Trabajadora social (primera consulta)", accion:"Cita telefónica.", explicacion:"La trabajadora social se pondrá en contacto con usted.", salida:"CITA_DIRECTA"},
+  {grupo:"Analítica / Recetas", motivo:"Analítica", accion:"Revisar si tiene más analíticas a 3 meses y fusionar; revisar si necesita recipiente.", explicacion:"Debe acudir al centro a la hora exacta de la cita.", salida:"CITA_DIRECTA"},
+  {grupo:"Analítica / Recetas", motivo:"Renovación de receta / parte de baja / ambulancias", accion:"Citar en hueco burocrática; si no es posible, abrir CASO (24h).", explicacion:"Le he dejado cita con su médico para el trámite.", salida:"CITA_DIRECTA"},
+  {grupo:"Analítica / Recetas", motivo:"Informe / certificado no contemplado en cartera de AP", accion:"Explicar que no procede según cartera de servicios de AP.", explicacion:"Según la cartera de servicios no procede; le indico dónde puede obtenerlo.", salida:"INFORMATIVO"},
+  {grupo:"Trámites de Hospital", motivo:"Retraso o demora en consultas/informes del hospital", accion:"Abrir gestión de CASO (48h).", explicacion:"He registrado su solicitud para que la revise el Servicio correspondiente.", salida:"GESTION_CASO"},
+  {grupo:"Trámites de Hospital", motivo:"Recuperar cita perdida por no asistencia", accion:"Abrir gestión de CASO (48h). [Nota origen: \"REVISAR; PROPUESTA NUEVO CIRCUITO\" — pendiente de Adolfo]", explicacion:"He registrado su solicitud, nos pondremos en contacto con usted.", salida:"GESTION_CASO"},
+  {grupo:"Trámites de Hospital", motivo:"Dudas sobre prestaciones del hospital", accion:"Abrir gestión de CASO (48h).", explicacion:"He registrado su solicitud para que la revise el Servicio correspondiente.", salida:"GESTION_CASO"},
+  {grupo:"Trámites de Hospital", motivo:"Receta de especialista no prescrita / revisión no solicitada", accion:"Gestión de casos; cita en Agenda Open especificando motivo.", explicacion:"He registrado su solicitud para que la revise el Servicio correspondiente.", salida:"GESTION_CASO"},
+];
+
+const PLANES_SALUD = [
+  {id:"corazon", nombre:"Corazón y Riesgo Cardiovascular", estado:"COMPLETO", oncologico:false,
+   perfil:"Adultos con hipertensión, colesterol elevado, diabetes, tabaquismo o antecedentes familiares cardiovasculares; o >40 años sin revisión cardiológica en 12 meses.",
+   cribado:"¿Tiene hipertensión, colesterol alto, diabetes, o algún familiar directo con problema cardiovascular? ¿Cuándo fue su última revisión cardiológica?",
+   mensaje:"Ese programa es nuestra revisión de Corazón y Riesgo Cardiovascular: analítica completa, electrocardiograma y valoración por Cardiología. Según el resultado, el cardiólogo puede indicar ecocardiograma, Holter, MAPA o prueba de esfuerzo.",
+   pruebas:"Analítica clínica completa + ECG y extracción (Enfermería) + valoración Cardiología; ecocardiograma/Holter/MAPA/prueba de esfuerzo según indicación médica.",
+   periodicidad:"Anual", derivacion:"Cardiología",
+   equivalente:"Sin equivalente directo. Programa Longevidad (parcial).", precioEquivalente:"—"},
+  {id:"diabetes", nombre:"Diabetes y Riesgo Metabólico", estado:"COMPLETO", oncologico:false,
+   perfil:"Sobrepeso, antecedentes familiares de diabetes, o síntomas de alteración metabólica (fatiga, sed excesiva, cambios de peso).",
+   cribado:"¿Tiene antecedentes familiares de diabetes, sobrepeso, o le han detectado alguna vez la glucosa alta?",
+   mensaje:"Ese programa incluye una analítica completa (glucosa, HbA1c, perfil lipídico, función renal, microalbuminuria), ECG y ecografía abdominal, con valoración especializada según el resultado.",
+   pruebas:"Analítica con glucosa, HbA1c, perfil lipídico, función renal, microalbuminuria, ECG, ecografía abdominal; valoración de íntima/media y TTSSAA.",
+   periodicidad:"ANUAL (sugerido — no especificado en el archivo de origen, confirmar con Adolfo)",
+   derivacion:"Neurología (SIC — así consta en el archivo original de Adolfo; revisar, lo esperable sería Endocrinología)",
+   equivalente:"Programa Control de Peso y Composición Corporal (parcial).", precioEquivalente:"590€ (970€ con GLP-1)",
+   avisoDato:"DATO DE ORIGEN A VERIFICAR: periodicidad y derivación dudosas en el archivo de Adolfo."},
+  {id:"digestiva", nombre:"Salud Digestiva y Colon 50+", estado:"COMPLETO", oncologico:true,
+   perfil:"Personas ≥50 años sin cribado de cáncer colorrectal en los últimos 3 años, o síntomas digestivos persistentes.",
+   cribado:"¿Tiene 50 años o más? ¿Se ha hecho alguna prueba de cribado de colon (sangre oculta en heces o colonoscopia) en los últimos 3 años?",
+   mensaje:"Ese programa es la revisión de Salud Digestiva y Colon 50+: test de sangre oculta en heces y, según resultado, colonoscopia o gastroscopia, con analítica específica y SIBO si procede, valorado por Digestivo.",
+   pruebas:"Test de sangre oculta en heces, colonoscopia, gastroscopia. Adjunto a Digestivo: analítica específica, SIBO.",
+   periodicidad:"3 años", derivacion:"Digestivo",
+   equivalente:"Programa Salud Digestiva Harmony (parcial — NO incluye colonoscopia de cribado oncológico).", precioEquivalente:"590€"},
+  {id:"femenina", nombre:"Salud Femenina 40+/50+", estado:"COMPLETO", oncologico:true,
+   perfil:"Mujeres 40-75 años, en seguimiento habitual o sin revisión reciente. Criterios BBDD: sin revisión ginecológica en 12 meses; sin citología/VPH en 24 meses; ≥50 años sin mamografía en 2025-2026.",
+   cribado:"¿Cuándo fue su última revisión ginecológica o mamografía?",
+   mensaje:"Le proponemos una revisión ginecológica completa, muy recomendable a partir de los 40-50 años: citología, VPH, ecografía ginecológica, mamografía y ecografía mamaria.",
+   pruebas:"Citología, VPH, ecografía ginecológica, mamografía, ecografía mamaria.",
+   periodicidad:"Anual", derivacion:"Ginecología",
+   equivalente:"Programa Hormonal Harmony (parcial — NO incluye citología/mamografía).", precioEquivalente:"690€"},
+  {id:"masculina", nombre:"Salud Masculina 50+ (revisión urológica)", estado:"COMPLETO", oncologico:true,
+   perfil:"Hombres ≥50 años, con o sin síntomas urológicos. Criterios BBDD: no vistos por Urología en 12 meses; sin seguimiento activo.",
+   cribado:"¿Ha tenido alguna vez molestias urinarias o le han revisado la próstata?",
+   mensaje:"A partir de los 50 años recomendamos una revisión urológica preventiva: PSA, analítica, ecografía prostática/renal-vesical y uroflujometría.",
+   pruebas:"PSA, analítica, ecografía prostática/renal-vesical, uroflujometría.",
+   periodicidad:"Anual", derivacion:"Urología",
+   equivalente:"Programa Salud Sexual Harmony (parcial — NO incluye cribado de PSA/próstata).", precioEquivalente:"490€"},
+  {id:"pulmon", nombre:"Pulmón del Fumador y Salud Respiratoria", estado:"EN DESARROLLO", oncologico:false,
+   perfil:"Fumadores activos o exfumadores <15 años, o síntomas respiratorios (tos crónica, disnea).",
+   cribado:"¿Es usted fumador o exfumador? ¿Cuántos años lleva o llevaba fumando? ¿Nota tos persistente o falta de aire?",
+   mensaje:"Ese programa es la revisión de Pulmón del Fumador y Salud Respiratoria: espirometría, radiografía y, si procede, TAC y analítica específica, valorado por Neumología.",
+   pruebas:"Espirometría, radiografía, TAC, analítica específica.",
+   periodicidad:"Anual", derivacion:"Neumología",
+   equivalente:"Sin equivalente Harmony. No ofrecer alternativa privada.", precioEquivalente:"—"},
+  {id:"sueno", nombre:"Sueño, Cansancio y Ronquidos", estado:"EN DESARROLLO", oncologico:false,
+   perfil:"Personas con ronquidos, cansancio diurno, pausas respiratorias observadas por la pareja, o sospecha de apnea.",
+   cribado:"¿Ronca de forma habitual, se despierta cansado, o le han comentado que hace pausas al respirar mientras duerme?",
+   mensaje:"Ese programa evalúa el sueño con polisomnografía y espirometría, valorado por Neumología, ORL y Cardiología según el caso.",
+   pruebas:"Polisomnografía, espirometría; tratamiento por ORL de pólipos/obstrucciones si procede.",
+   periodicidad:"Anual", derivacion:"Neumología / ORL / Cardiología",
+   equivalente:"Programa Sueño y Descanso Harmony — EQUIVALENCIA ALTA (incluye polisomnografía hospitalaria de serie).", precioEquivalente:"590€"},
+  {id:"neurologico", nombre:"Chequeo Neurológico / Memoria 60+", estado:"EN DESARROLLO", oncologico:false,
+   perfil:"Personas ≥60 años con quejas de memoria/concentración, o antecedentes familiares de deterioro cognitivo.",
+   cribado:"¿Tiene 60 años o más? ¿Ha notado usted o su familia fallos de memoria o de concentración recientes?",
+   mensaje:"Ese programa es el Chequeo Neurológico y de Memoria 60+: cribado cognitivo, analítica y RNM valorados por Neurología, con evaluación neuropsicológica.",
+   pruebas:"RNM, cribado cognitivo, analítica, evaluación neuropsicológica; en <75 años, según indicación: PET cerebral, RNM de perfusión, punción lumbar.",
+   periodicidad:"Anual", derivacion:"Neurología / Neuropsicología",
+   equivalente:"Programa Neurológico y Cognitivo Harmony — EQUIVALENCIA ALTA.", precioEquivalente:"980€"},
+  {id:"osteoporosis", nombre:"Osteoporosis y Salud Ósea", estado:"EN DESARROLLO", oncologico:false,
+   perfil:"Mujeres postmenopáusicas, mayores de 65 años, o con factores de riesgo de fractura.",
+   cribado:"¿Es usted mujer postmenopáusica o mayor de 65 años? ¿Tiene antecedentes familiares de osteoporosis o fracturas por fragilidad?",
+   mensaje:"Ese programa incluye densitometría ósea, analítica y radiografías, valorado por Medicina Interna y Reumatología, con derivación odontológica si procede.",
+   pruebas:"Densitometría, analítica, radiografías; Medicina Interna; Reumatología (+ derivación a dentista).",
+   periodicidad:"Anual", derivacion:"Medicina Interna / Reumatología",
+   equivalente:"Sin programa equivalente exacto. DEXA solo incluida en Longevidad Executive.", precioEquivalente:"900€ / 3.450€"},
+];
+
+const CENTROS_HCB = [
+  "Hospital HCB Benidorm",
+  "Hospital HCB Dénia",
+  "Policlínica HCB Calpe",
+  "Policlínica HCB Moraira",
+  "Policlínica HCB Albir",
+  "Otro centro (especificar)",
+];
+
+const PREFIJOS_TEL = [
+  {code:"+34", label:"España (+34)"},
+  {code:"+44", label:"Reino Unido (+44)"},
+  {code:"+49", label:"Alemania (+49)"},
+  {code:"+31", label:"Países Bajos (+31)"},
+  {code:"+33", label:"Francia (+33)"},
+  {code:"+32", label:"Bélgica (+32)"},
+  {code:"+351", label:"Portugal (+351)"},
+  {code:"+41", label:"Suiza (+41)"},
+  {code:"+353", label:"Irlanda (+353)"},
+  {code:"+1", label:"EE.UU. / Canadá (+1)"},
+  {code:"otro", label:"Otro prefijo internacional…"},
+];
+
+/* ---------- validación de formato ---------- */
+function validateEmailFormat(v){
+  if(!v) return true; // opcional
+  return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(v.trim());
+}
+const DNI_LETRAS = "TRWAGMYFPDXBNJZSQVHLCKE";
+function dniNieTieneFormatoEspanol(v){
+  const s = (v||"").toUpperCase().replace(/[\s-]/g,"");
+  return /^\d{8}[A-Z]$/.test(s) || /^[XYZ]\d{7}[A-Z]$/.test(s);
+}
+function validateDniNieFormat(v){
+  if(!v) return true; // opcional
+  const s = v.toUpperCase().replace(/[\s-]/g,"");
+  let m = s.match(/^(\d{8})([A-Z])$/);
+  if(m) return DNI_LETRAS[parseInt(m[1],10) % 23] === m[2];
+  m = s.match(/^([XYZ])(\d{7})([A-Z])$/);
+  if(m){ const map={X:"0",Y:"1",Z:"2"}; return DNI_LETRAS[parseInt(map[m[1]]+m[2],10) % 23] === m[3]; }
+  return true; // no tiene forma de DNI/NIE español -> se admite como otro documento (pasaporte, etc.)
+}
+function validatePhoneParts(prefijo, numero){
+  const n = (numero||"").replace(/[\s-]/g,"");
+  if(!prefijo || !/^\+\d{1,4}$/.test(prefijo)) return false;
+  return /^\d{6,12}$/.test(n);
+}
+
+/* ---------- base de datos de pacientes SIMULADA (prototipo) ----------
+   En producción, esto se sustituye por la búsqueda real contra el
+   sistema del hospital (Informática). Los 3 DNI/NIE de ejemplo tienen
+   letra de control correcta para que el prototipo se vea creíble. */
+const FAKE_PACIENTES = [
+  {dni:"12345678Z", nombre:"María Fernández Ruiz", telefono:"+34 611222333", email:"maria.fernandez@example.com", aseguradora:"Adeslas"},
+  {dni:"X1234567L", nombre:"John Smith", telefono:"+44 7911123456", email:"john.smith@example.com", aseguradora:""},
+  {dni:"87654321X", nombre:"Antonio López García", telefono:"+34 622333444", email:"", aseguradora:"Sanitas"},
+];
+function buscarPacientePorDni(dni){
+  const s = (dni||"").toUpperCase().replace(/[\s-]/g,"");
+  return FAKE_PACIENTES.find(p => p.dni.toUpperCase() === s) || null;
+}
+
+
+const HARMONY_PROGRAMAS = [
+  {motivo:"Salud Hormonal / menopausia / perimenopausia", pilar:"Salud Hormonal · Longevidad", programa:"Programa Hormonal", precio:"690€"},
+  {motivo:"Energía / vitalidad / capilar (hombre)", pilar:"Medicina Regenerativa · Capilar", programa:"PRP / infusiones IV + valoración capilar", precio:"Variable"},
+  {motivo:"Estética / dermatología", pilar:"Estética Regenerativa", programa:"Estética integral / aparatología", precio:"Variable"},
+  {motivo:"Rendimiento físico / longevidad (35-45)", pilar:"Longevidad", programa:"Longevidad Essential / Synergy / Longevity", precio:"900€ / 1.600€ / 3.450€"},
+  {motivo:"Postparto (<18 meses)", pilar:"Estética Integral · Control de Peso", programa:"Programa Control de Peso", precio:"590€ (970€ con GLP-1)"},
+  {motivo:"Alopecia", pilar:"Medicina Regenerativa", programa:"Programa Capilar", precio:"890€"},
+  {motivo:"Post-cirugía bariátrica", pilar:"Control de Peso y Composición Corporal", programa:"Programa Control de Peso", precio:"590€ (970€ con GLP-1)"},
+  {motivo:"Post-cirugía general / oncológica reciente", pilar:"Estética Regenerativa", programa:"PRP / infusiones IV (a medida)", precio:"Variable"},
+  {motivo:"18-35 años, motivo estético puro", pilar:"Estética Integral", programa:"Estética integral", precio:"Variable"},
+  {motivo:"Perfil ejecutivo, alto ticket", pilar:"Medicina Regenerativa · Cirugía Plástica · Hormonal", programa:"Longevidad Executive + Hormonal", precio:"Desde 3.450€ + 690€"},
+  {motivo:"Sueño, cansancio, ronquidos", pilar:"Longevidad", programa:"Programa Sueño y Descanso", precio:"590€"},
+  {motivo:"Chequeo neurológico / memoria 60+", pilar:"Longevidad", programa:"Programa Neurológico y Cognitivo", precio:"980€"},
+  {motivo:"Salud Digestiva", pilar:"Salud Hormonal (catálogo)", programa:"Programa Salud Digestiva", precio:"590€"},
+  {motivo:"Salud Sexual", pilar:"Salud Hormonal", programa:"Programa Salud Sexual", precio:"490€"},
+  {motivo:"Osteoporosis", pilar:"Longevidad", programa:"Longevidad Essential / Executive (DEXA)", precio:"900€ / 3.450€"},
+];
+
+const OBJECIONES = [
+  {obj:"\"No me interesa, ya tengo mi médico.\"", resp:"Harmony no sustituye a su médico, es un complemento en longevidad y bienestar."},
+  {obj:"\"¿Esto es privado? No tengo seguro.\"", resp:"Sí, es un servicio privado. La cita informativa es completamente gratuita."},
+  {obj:"\"¿Cuánto cuesta?\"", resp:"La cita informativa es gratuita. La valoración completa son 360€, descontables si inicia el programa."},
+  {obj:"\"Ahora mismo no tengo tiempo.\"", resp:"¿Cuándo sería mejor momento? Tenemos disponibilidad en varios horarios, incluidas tardes."},
+  {obj:"\"¿Cómo han conseguido mi número?\"", resp:"Es paciente de HCB Hospitales; le informamos de este nuevo servicio. Si prefiere no recibir más llamadas, lo anoto ahora."},
+  {obj:"\"Ya conozco algo similar en otra clínica.\"", resp:"La diferencia es estar dentro de un hospital, con tecnología diagnóstica y equipo médico completo."},
+  {obj:"\"¿Qué incluye la visita de valoración?\"", resp:"Una consulta de ~1 hora con nuestro equipo Harmony; conocemos su situación y presentamos su Plan 360°."},
+  {obj:"\"¿Lo cubre mi mutua?\" (Planes de Salud)", resp:"Consultar cobertura por mutua y por prueba (SI/AUTO/NO) antes de confirmar precio o autorización."},
+  {obj:"\"No tengo síntomas, no lo necesito.\" (Planes de Salud)", resp:"La idea de estos planes es detectar a tiempo, antes de que aparezcan síntomas."},
+  {obj:"\"Ya me hice una revisión similar hace poco.\"", resp:"¿Me indica cuándo fue y qué le hicieron? Valoramos si corresponde repetir según la periodicidad del plan."},
+  {obj:"\"No me fío de las llamadas telefónicas.\"", resp:"Puede verificar la llamada llamando al teléfono oficial de HCB o acercándose al centro."},
+];
+
+const ESTADOS = {
+  "Nuevo / sin gestionar":            {color:"#8E9A9C", sla:"≤ 2 horas", resp:"Recepción/Auxiliares"},
+  "No contesta (intento 1/2/3)":      {color:"var(--amber)", sla:"1 intento/día, 3 días", resp:"Recepción/Auxiliares"},
+  "No contesta – enviado WA/email":   {color:"var(--amber-dark)", sla:"Mismo día del 3er intento", resp:"Recepción/Auxiliares"},
+  "Contactado, pendiente de decisión":{color:"var(--amber)", sla:"48-72 horas", resp:"Recepción/Auxiliares"},
+  "Citado":                           {color:"var(--teal)", sla:"Hasta la fecha de la cita", resp:"Recepción/Auxiliares"},
+  "No asistió":                       {color:"var(--red)", sla:"24-48h tras la cita", resp:"Recepción/Auxiliares"},
+  "Acudió + valoración/presupuesto":  {color:"var(--teal-dark)", sla:"Diario hasta decidir", resp:"Área Comercial"},
+  "Contratado":                       {color:"var(--green)", sla:"—", resp:"Área Comercial"},
+  "No interesado":                    {color:"var(--red)", sla:"Reactivar a 6 meses", resp:"Recepción/Auxiliares"},
+  "Queja / Sugerencia":               {color:"#555", sla:"48 horas", resp:"Responsable de centro"},
+};
+
+const WA_TEMPLATES = {
+  "WA-01":{nombre:"Bienvenida / solicitud recibida", texto:"Hola {{nombre}}, gracias por su interés en {{plan}}. Le llamaremos en el horario que nos ha indicado. Si lo prefiere, puede reservar usted mismo/a aquí → {{enlace}}."},
+  "WA-02":{nombre:"No contesta — 3er intento", texto:"Hola {{nombre}}, hemos intentado localizarle sin éxito. Le dejamos la información de {{plan}} y el enlace para reservar cuando le venga bien → {{enlace}}."},
+  "WA-03":{nombre:"Cumpleaños", texto:"¡Feliz cumpleaños, {{nombre}}! Como regalo, le proponemos una valoración Harmony sin compromiso. ¿Se la reservamos?"},
+  "WA-04":{nombre:"Recordatorio de cita", texto:"Le recordamos su cita el {{fecha}} en {{centro}}. Si necesita cambiarla, avísenos con antelación respondiendo a este mensaje."},
+  "WA-05":{nombre:"Recuperación de no-show", texto:"Hola {{nombre}}, vimos que no pudo acudir a su cita. Estos leads son recuperables — ¿le reprogramamos?"},
+  "WA-06":{nombre:"Reactivación a 6 meses", texto:"Hola {{nombre}}, han pasado unos meses desde que hablamos de {{plan}}. Si su situación ha cambiado y quiere retomarlo, estamos a su disposición → {{enlace}}."},
+};
+
+const ESTADO_A_WA = {
+  "No contesta – enviado WA/email":"WA-02",
+  "Citado":"WA-04",
+  "No asistió":"WA-05",
+  "No interesado":"WA-06",
+};
+
+/* ============================================================
+   2) ESTADO DE LA APLICACIÓN Y UTILIDADES
+   ============================================================ */
+const APP = {
+  user: null,          // {username}
+  view: "login",
+  nav: "home",          // pestaña activa del topbar cuando hay sesión: home | wizard | leads
+  wizard: {},           // datos acumulados durante "nueva llamada"
+  leads: [],            // caché de leads cargados de window.storage
+  currentLeadId: null,
+  modal: null,          // {type:'objeciones'} | {type:'wa', code, leadId}
+};
+
+function escapeHtml(str){
+  return String(str == null ? "" : str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function uid(prefix){
+  const rnd = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"-"+Math.random())).replace(/-/g,"").slice(0,8);
+  return (prefix||"LEAD")+"-"+rnd.toUpperCase();
+}
+function nowIso(){ return new Date().toISOString(); }
+function fmtDateTime(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-ES") + " " + d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+}
+function estadoBadge(estado){
+  const e = ESTADOS[estado] || {color:"#999"};
+  return `<span class="badge" style="background:${e.color}">${escapeHtml(estado)}</span>`;
+}
+function fillTemplate(text, vars){
+  return text.replace(/\{\{(\w+)\}\}/g, (m,k)=> vars[k]!=null ? vars[k] : m);
+}
+
+/* ---------- persistencia (window.storage con respaldo a localStorage) ----------
+   Cambiar SOLO estas 4 funciones cuando Informática conecte
+   la base de datos real; el resto de la app no debe tocarse.
+   Si window.storage no existe (p. ej. la app publicada fuera de
+   Claude.ai, como en GitHub Pages), se usa localStorage del
+   navegador como respaldo — solo para que la demo funcione;
+   en producción real esto lo sustituye la BBDD del hospital. */
+const HAS_CLAUDE_STORAGE = (typeof window.storage !== "undefined");
+async function storageSet(key, valueObj){
+  try{
+    if(HAS_CLAUDE_STORAGE){ await window.storage.set(key, JSON.stringify(valueObj), false); }
+    else { localStorage.setItem(key, JSON.stringify(valueObj)); }
+    return true;
+  } catch(e){ console.error("storageSet error", e); return false; }
+}
+async function storageGet(key){
+  try{
+    if(HAS_CLAUDE_STORAGE){ const r = await window.storage.get(key, false); return r ? JSON.parse(r.value) : null; }
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : null;
+  } catch(e){ return null; }
+}
+async function storageListKeys(prefix){
+  try{
+    if(HAS_CLAUDE_STORAGE){ const r = await window.storage.list(prefix, false); return (r && r.keys) ? r.keys : []; }
+    const keys = [];
+    for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && k.startsWith(prefix)) keys.push(k); }
+    return keys;
+  } catch(e){ return []; }
+}
+
+
+async function loadAllLeads(){
+  const keys = await storageListKeys("lead:");
+  const leads = [];
+  for(const k of keys){
+    const v = await storageGet(k);
+    if(v) leads.push(v);
+  }
+  leads.sort((a,b)=> new Date(b.fecha_hora_entrada) - new Date(a.fecha_hora_entrada));
+  APP.leads = leads;
+  return leads;
+}
+async function saveLead(lead){ await storageSet("lead:"+lead.id_lead, lead); }
+
+async function addObservacion(lead, texto){
+  // Regla de negocio: SOLO se añade. Nunca se edita ni se borra una línea existente.
+  lead.observaciones.push({ts: nowIso(), user: APP.user.username, text: texto});
+  await saveLead(lead);
+}
+
+function newLead(fields){
+  const base = {
+    id_lead: uid("LEAD"),
+    fecha_hora_entrada: nowIso(),
+    canal: "Llamada entrante espontánea",
+    categoria: "Sin clasificar",
+    nombre_apellidos: "",
+    telefono: "",
+    dni_nie: "",
+    email: "",
+    es_paciente_hospital: "No lo sabe / no consta",
+    centro: "",
+    tiene_seguro: "No",
+    motivo_llamada: "",
+    unidad_plan_interes: "",
+    segmento_harmony: "",
+    estado: "Nuevo / sin gestionar",
+    proxima_accion_fecha: "",
+    observaciones: [],
+    resultado_final: "",
+    agente_asignado: APP.user ? APP.user.username : "",
+    no_contactar: false,
+  };
+  return Object.assign(base, fields);
+}
+
+/* ============================================================
+   3) ROUTER / RENDER
+   ============================================================ */
+function el(id){ return document.getElementById(id); }
+function setView(view){ APP.view = view; render(); }
+
+function render(){
+  const root = el("app");
+  if(!APP.user){ root.innerHTML = renderLogin(); return; }
+  let body = "";
+  if(APP.view === "home") body = renderHome();
+  else if(APP.view.startsWith("wizard")) body = renderWizard();
+  else if(APP.view === "leads") body = renderLeadsPanel();
+  else if(APP.view === "lead-detail") body = renderLeadDetail();
+  else body = renderHome();
+
+  root.innerHTML = renderTopBar() + `<div class="container">${body}</div>` + renderFooter() + renderModal() +
+    `<button class="fab-objeciones" onclick="showObjecionesModal()">💬 Objeciones</button>`;
+}
+
+function renderTopBar(){
+  const navBtn = (view, label) => `<button class="${APP.view===view || (view==="wizard" && APP.view.startsWith("wizard")) ? "active":""}" onclick="goTo('${view}')">${label}</button>`;
+  return `
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> HCB · PANEL DE LEADS</div>
+    <nav>
+      ${navBtn("home","Inicio")}
+      ${navBtn("wizard","Nueva llamada")}
+      ${navBtn("leads","Panel de leads")}
+    </nav>
+    <div class="session">
+      <span class="lock">🔒</span> ${escapeHtml(APP.user.username)} · Agente
+      <button onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>`;
+}
+
+function renderFooter(){
+  return `<div class="footer-note container" style="max-width:1080px;margin:0 auto;">
+    Prototipo funcional HCB · Call Center + Harmony — autenticación simulada, pendiente de integrar con los sistemas
+    de seguridad del hospital. Datos guardados solo para esta demostración.
+  </div>`;
+}
+
+function goTo(view){
+  if(view === "wizard"){ APP.wizard = {}; APP.view = "wizard-1"; }
+  else if(view === "leads"){ APP.view = "leads"; loadAllLeads().then(render); return; }
+  else { APP.view = view; }
+  render();
+}
+
+function logout(){ APP.user = null; APP.view="login"; render(); }
+
+/* ============================================================
+   4) LOGIN (simulado)
+   ============================================================ */
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="logo">HCB · Panel de Leads</div>
+      <div class="logo-sub">Call Center · Planes de Salud · Harmony</div>
+      <div class="field">
+        <label>Usuario</label>
+        <input type="text" id="login-user" placeholder="ana.ruiz" />
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="text" id="login-pass" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">🔒 Iniciar sesión</button>
+      <div id="login-error" class="small" style="color:var(--red);margin-top:8px;"></div>
+      <div class="login-note">
+        Acceso simulado para esta demostración: cualquier usuario y contraseña no vacíos funcionan.
+        La autenticación real y el cifrado los define Informática con los servidores de seguridad del hospital.
+      </div>
+    </div>
+  </div>`;
+}
+async function doLogin(){
+  const u = el("login-user").value.trim();
+  const p = el("login-pass").value.trim();
+  if(!u || !p){ el("login-error").textContent = "Introduce usuario y contraseña."; return; }
+  APP.user = {username:u};
+  APP.view = "home";
+  await loadAllLeads();
+  render();
+}
+
+/* ============================================================
+   5) HOME / DASHBOARD
+   ============================================================ */
+function renderHome(){
+  const leads = APP.leads;
+  const count = (estado) => leads.filter(l=>l.estado===estado).length;
+  const citas = count("Citado");
+  const nuevos = count("Nuevo / sin gestionar") + count("No contesta (intento 1/2/3)") + count("Contactado, pendiente de decisión");
+  const contratados = count("Contratado");
+  const total = leads.length;
+  return `
+  <div class="kicker">Bienvenida</div>
+  <h1>Hola, ${escapeHtml(APP.user.username)}</h1>
+  <p class="muted">Registra cualquier llamada — entrante o saliente, Planes de Salud o Harmony — desde un único sitio.</p>
+
+  <div class="grid-2" style="margin:20px 0;">
+    <button class="btn btn-primary" style="padding:20px;font-size:16px;" onclick="goTo('wizard')">📞 Nueva llamada</button>
+    <button class="btn btn-outline" style="padding:20px;font-size:16px;" onclick="goTo('leads')">📋 Ver panel de leads (${total})</button>
+  </div>
+
+  <div class="grid-3">
+    <div class="kpi-card"><div class="num">${total}</div><div class="lbl">Leads totales</div></div>
+    <div class="kpi-card"><div class="num">${nuevos}</div><div class="lbl">Pendientes de gestionar</div></div>
+    <div class="kpi-card"><div class="num">${citas}</div><div class="lbl">Citados</div></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <b>Contratados / convertidos:</b> ${contratados} de ${total} leads registrados.
+  </div>`;
+}
+
+/* ============================================================
+   6) WIZARD "NUEVA LLAMADA" — sigue el Algoritmo Maestro (hoja 01)
+   ============================================================ */
+function stepsBar(activeIdx, total){
+  let segs = "";
+  for(let i=0;i<total;i++) segs += `<div class="seg ${i<=activeIdx ? "done":""}"></div>`;
+  return `<div class="steps-bar">${segs}</div>`;
+}
+
+function renderWizard(){
+  const v = APP.view;
+  if(v === "wizard-1") return wizardStep1();
+  if(v === "wizard-2-confuso") return wizardConfusoDatos();
+  if(v === "wizard-2-espaciente") return wizardEsPaciente();
+  if(v === "wizard-2-buscar") return wizardBuscarPaciente();
+  if(v === "wizard-2-alta") return wizardAltaPaciente();
+  if(v === "wizard-2-aseguradora") return wizardConfirmarAseguradora();
+  if(v === "wizard-2-seguro") return wizardBloqueSeguro();
+  if(v === "wizard-2-clinica") return wizardClinica();
+  if(v === "wizard-2-plan") return wizardPlanSelect();
+  if(v === "wizard-2-plan-ficha") return wizardPlanFicha();
+  if(v === "wizard-2-harmony") return wizardHarmony();
+  if(v === "wizard-3") return wizardCierre();
+  if(v === "wizard-done") return wizardDone();
+  return wizardStep1();
+}
+
+function saludoHora(){
+  const h = new Date().getHours();
+  return h < 13 ? "Buenos días" : "Buenas tardes";
+}
+
+/* ============================================================
+   6) WIZARD "NUEVA LLAMADA"
+   Orden: saludo + motivo -> ¿es paciente? -> buscar/alta ->
+   (seguro genérico o confirmación de aseguradora, según rama) ->
+   selección concreta de la rama -> cierre.
+   ============================================================ */
+function wizardStep1(){
+  const w = APP.wizard;
+  return `
+  ${stepsBar(0,3)}
+  <div class="kicker">Saludo · Motivo de la llamada</div>
+  <h2>¿En qué podemos ayudarle?</h2>
+  <div class="script-box"><span class="script-label">Decir</span>"HCB, ${saludoHora().toLowerCase()}, le atiende ${escapeHtml(APP.user.username)}. ¿En qué podemos ayudarle?"</div>
+  <div class="card">
+    <div class="radio-group">
+      ${radioOpt("w-motivotipo","asistencial", w.motivoTipo, "Servicios del hospital", "Cita AP: enfermería, pediatría, matrona, salud mental, odontología, trámites…")}
+      ${radioOpt("w-motivotipo","plan", w.motivoTipo, "Planes de Salud", "El paciente nombra el plan o describe un síntoma/edad que encaja con uno de los 9.")}
+      ${radioOpt("w-motivotipo","harmony", w.motivoTipo, "HCB Harmony", "Estética, longevidad, medicina regenerativa, capilar, control de peso…")}
+      ${radioOpt("w-motivotipo","confuso", w.motivoTipo, "No lo tengo claro", "Paciente confuso o disperso — se registra como lead para reclasificar.")}
+    </div>
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="wizardStep1Next()">Continuar →</button>
+  </div>`;
+}
+function wizardStep1Next(){
+  const t = getRadioValue("w-motivotipo");
+  if(!t){ alert("Selecciona una opción."); return; }
+  const w = APP.wizard;
+  w.motivoTipo = t;
+  w.categoria = {asistencial:"Servicios del Hospital", plan:"Planes de Salud", harmony:"Harmony", confuso:"Sin clasificar"}[t];
+  APP.view = (t === "confuso") ? "wizard-2-confuso" : "wizard-2-espaciente";
+  render();
+}
+
+function wizardConfusoDatos(){
+  const w = APP.wizard;
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">No lo tengo claro</div>
+  <h2>Datos mínimos para poder recontactar</h2>
+  <div class="card">
+    <div class="field"><label>Nombre y apellidos</label><input type="text" id="w-nombre" value="${escapeHtml(w.nombre||"")}"/></div>
+    <div class="field"><label>Teléfono</label><input type="text" id="w-telefono-simple" value="${escapeHtml(w.telefono||"")}" placeholder="+34 6XX XXX XXX"/></div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-1';render();">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardConfusoNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardConfusoNext(){
+  const w = APP.wizard;
+  w.nombre = el("w-nombre").value.trim();
+  w.telefono = el("w-telefono-simple").value.trim();
+  if(!w.nombre){ alert("Introduce al menos el nombre."); return; }
+  w.salida = "LEAD_SEGUIMIENTO";
+  w.estadoInicial = "Nuevo / sin gestionar";
+  w.motivo_llamada = "Motivo no identificable / paciente confuso";
+  w.unidad_plan_interes = "Por determinar";
+  w.canal = "Llamada entrante — sin clasificar";
+  APP.view = "wizard-3";
+  render();
+}
+
+function wizardEsPaciente(){
+  const w = APP.wizard;
+  const tituloRama = {asistencial:"Servicios del hospital", plan:"Planes de Salud", harmony:"HCB Harmony"}[w.motivoTipo];
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">${escapeHtml(tituloRama)}</div>
+  <h2>¿Ya es paciente del hospital?</h2>
+  <div class="script-box"><span class="script-label">Preguntar</span>"¿Es usted ya paciente de HCB?"</div>
+  <div class="card">
+    <div class="radio-group">
+      ${radioOpt("w-espaciente","si", w.esPacienteResp, "Sí, ya es paciente de HCB", "Buscamos su ficha por DNI/NIE.")}
+      ${radioOpt("w-espaciente","no", w.esPacienteResp, "No, es paciente nuevo", "Se le da de alta con sus datos.")}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-1';render();">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardEsPacienteNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardEsPacienteNext(){
+  const r = getRadioValue("w-espaciente");
+  if(!r){ alert("Selecciona una opción."); return; }
+  const w = APP.wizard;
+  w.esPacienteResp = r;
+  if(r === "si"){ APP.view = "wizard-2-buscar"; }
+  else { w.pacienteEncontrado = false; APP.view = "wizard-2-alta"; }
+  render();
+}
+
+function wizardBuscarPaciente(){
+  const w = APP.wizard;
+  const resultado = w.busquedaResultado;
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Buscar en la base de datos del hospital</div>
+  <h2>Localizar por DNI / NIE</h2>
+  <p class="muted small">Prototipo: simula la conexión con la base de datos real del hospital (integración pendiente de Informática). Prueba con 12345678Z, X1234567L o 87654321X.</p>
+  <div class="card">
+    <div class="field"><label>DNI / NIE</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="w-buscar-dni" value="${escapeHtml(w.dniBuscado||"")}" placeholder="12345678Z"/>
+        <button class="btn btn-outline" onclick="wizardBuscarDni()">🔎 Buscar</button>
+      </div>
+    </div>
+    ${resultado === "encontrado" ? `
+      <div class="aviso-box" style="background:var(--green-bg);border-left-color:var(--green);color:#154d26;">
+        <b style="color:var(--green);">Paciente encontrado:</b> ${escapeHtml(w.pacienteData.nombre)} · ${escapeHtml(w.pacienteData.telefono)} · ${escapeHtml(w.pacienteData.email||"(sin email)")}
+        ${w.pacienteData.aseguradora ? ` · Aseguradora en ficha: ${escapeHtml(w.pacienteData.aseguradora)}` : " · Sin aseguradora registrada"}
+      </div>
+      <button class="btn btn-primary btn-block" onclick="wizardUsarPacienteEncontrado()">Continuar con estos datos →</button>
+    ` : ""}
+    ${resultado === "no_encontrado" ? `
+      <div class="aviso-box"><b>No encontrado.</b> Se dará de alta como paciente nuevo.</div>
+      <button class="btn btn-primary btn-block" onclick="wizardIrAlta()">Continuar como paciente nuevo →</button>
+    ` : ""}
+    <div style="margin-top:14px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-2-espaciente';render();">← Atrás</button>
+    </div>
+  </div>`;
+}
+function wizardBuscarDni(){
+  const dni = el("w-buscar-dni").value.trim();
+  const w = APP.wizard;
+  w.dniBuscado = dni;
+  if(!dni){ alert("Introduce un DNI/NIE para buscar."); return; }
+  const encontrado = buscarPacientePorDni(dni);
+  if(encontrado){ w.busquedaResultado = "encontrado"; w.pacienteData = encontrado; }
+  else { w.busquedaResultado = "no_encontrado"; w.pacienteData = null; }
+  render();
+}
+function wizardUsarPacienteEncontrado(){
+  const w = APP.wizard;
+  const p = w.pacienteData;
+  w.pacienteEncontrado = true;
+  w.nombre = p.nombre; w.telefono = p.telefono; w.dni = p.dni; w.email = p.email || "";
+  w.aseguradoraFicha = p.aseguradora || "";
+  if(w.motivoTipo === "plan"){ APP.view = "wizard-2-aseguradora"; }
+  else if(w.motivoTipo === "asistencial"){ APP.view = "wizard-2-clinica"; }
+  else { APP.view = "wizard-2-harmony"; }
+  render();
+}
+function wizardIrAlta(){
+  APP.wizard.pacienteEncontrado = false;
+  APP.wizard.dni = APP.wizard.dniBuscado || "";
+  APP.view = "wizard-2-alta";
+  render();
+}
+
+function wizardAltaPaciente(){
+  const w = APP.wizard;
+  const prefijoActual = w.prefijo || "+34";
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Alta de paciente nuevo</div>
+  <h2>Datos del paciente</h2>
+  <div class="card">
+    <div class="field"><label>Nombre y apellidos</label><input type="text" id="w-nombre" value="${escapeHtml(w.nombre||"")}"/></div>
+    <div class="field">
+      <label>Teléfono (con prefijo internacional — el 65% del paciente HCB es internacional)</label>
+      <div style="display:flex;gap:8px;">
+        <select id="w-prefijo" style="max-width:210px;" onchange="wizardPrefijoChanged(this.value)">
+          ${PREFIJOS_TEL.map(p=>`<option value="${p.code}" ${prefijoActual===p.code?"selected":""}>${p.label}</option>`).join("")}
+        </select>
+        ${prefijoActual==="otro" ? `<input type="text" id="w-prefijo-custom" placeholder="+xxx" value="${escapeHtml(w.prefijoCustom||"")}" style="max-width:110px;" oninput="validateTelefonoLive()"/>` : ""}
+        <input type="text" id="w-telefono-num" value="${escapeHtml(w.telefonoNum||"")}" placeholder="612345678" oninput="validateTelefonoLive()"/>
+      </div>
+      <div id="w-telefono-error" class="small" style="color:var(--red);margin-top:4px;"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>DNI / NIE / Pasaporte</label>
+        <input type="text" id="w-dni" value="${escapeHtml(w.dni||"")}" placeholder="12345678A · X1234567L · pasaporte" oninput="wizardDniTouched()"/>
+        <div id="w-dni-error" class="small" style="color:var(--red);margin-top:4px;"></div>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="w-email" value="${escapeHtml(w.email||"")}" placeholder="paciente@correo.com" oninput="wizardEmailTouched()"/>
+        <div id="w-email-error" class="small" style="color:var(--red);margin-top:4px;"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="wizardAltaAtras()">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardAltaNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardAltaAtras(){
+  APP.view = (APP.wizard.esPacienteResp === "si") ? "wizard-2-buscar" : "wizard-2-espaciente";
+  render();
+}
+function wizardAltaNext(){
+  const w = APP.wizard;
+  w.nombre = el("w-nombre").value.trim();
+  const prefijoSel = el("w-prefijo").value;
+  const customEl = el("w-prefijo-custom");
+  const prefijoFinal = prefijoSel==="otro" ? (customEl?customEl.value.trim():"") : prefijoSel;
+  const numero = el("w-telefono-num").value.trim();
+  w.prefijo = prefijoSel; w.prefijoCustom = customEl?customEl.value.trim():""; w.telefonoNum = numero;
+  w.dni = el("w-dni").value.trim();
+  w.email = el("w-email").value.trim();
+
+  if(!w.nombre){ alert("Introduce al menos el nombre del paciente."); return; }
+  if(!validatePhoneParts(prefijoFinal, numero)){
+    el("w-telefono-error").textContent = "Teléfono obligatorio: prefijo internacional + 6 a 12 dígitos.";
+    return;
+  }
+  if(!validateEmailFormat(w.email)){
+    el("w-email-error").textContent = "Formato de email no válido.";
+    return;
+  }
+  if(dniNieTieneFormatoEspanol(w.dni) && !validateDniNieFormat(w.dni)){
+    el("w-dni-error").textContent = "La letra no corresponde con ese número de DNI/NIE — revisa el dato.";
+    return;
+  }
+  w.telefono = prefijoFinal + " " + numero;
+
+  APP.view = (w.motivoTipo === "harmony") ? "wizard-2-harmony" : "wizard-2-seguro";
+  render();
+}
+
+function wizardConfirmarAseguradora(){
+  const w = APP.wizard;
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Planes de Salud · Paciente ya registrado</div>
+  <h2>Confirmar aseguradora</h2>
+  <div class="card">
+    <p class="muted">${w.aseguradoraFicha ? `En su ficha consta: <b>${escapeHtml(w.aseguradoraFicha)}</b>. Confírmela con el paciente.` : "No consta ninguna aseguradora en su ficha."}</p>
+    <div class="field"><label>Aseguradora / mutua (dejar en blanco si no tiene)</label>
+      <input type="text" id="w-aseguradora" value="${escapeHtml(w.aseguradoraConfirmada!=null ? w.aseguradoraConfirmada : (w.aseguradoraFicha||""))}" placeholder="Ej. Adeslas, Sanitas…"/>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-2-buscar';render();">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardAseguradoraNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardAseguradoraNext(){
+  APP.wizard.aseguradoraConfirmada = el("w-aseguradora").value.trim();
+  APP.view = "wizard-2-plan";
+  render();
+}
+
+function wizardBloqueSeguro(){
+  const w = APP.wizard;
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">${w.motivoTipo==="asistencial" ? "Servicios del hospital" : "Planes de Salud"} · Paciente nuevo</div>
+  <h2>¿Tiene seguro o acreditación?</h2>
+  <div class="card">
+    <div class="radio-group">
+      ${radioOpt("w-seguro","tiene", w.seguro, "Tiene seguro / mutua", "Continuar.")}
+      ${radioOpt("w-seguro","otra_comunidad", w.seguro, "No tiene seguro — nacional de otra comunidad", "Se crea alta mínima en SIP provisional y se continúa.")}
+      ${radioOpt("w-seguro","otra_acreditacion", w.seguro, "No tiene seguro — otras acreditaciones", "Se abre gestión de CASO (24-48h) y se continúa.")}
+      ${radioOpt("w-seguro","ninguna", w.seguro, "No tiene ninguna acreditación aplicable (p. ej. extranjero sin seguro)", "No se decide destino todavía — se continúa igualmente.")}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-2-alta';render();">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardSeguroNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardSeguroNext(){
+  const w = APP.wizard;
+  w.seguro = getRadioValue("w-seguro") || "ninguna";
+  APP.view = (w.motivoTipo === "asistencial") ? "wizard-2-clinica" : "wizard-2-plan";
+  render();
+}
+
+function wizardPrefijoChanged(value){
+  const w = APP.wizard;
+  const numField = el("w-telefono-num");
+  if(numField) w.telefonoNum = numField.value;
+  w.prefijo = value;
+  render();
+}
+function validateTelefonoLive(){
+  const prefijo = el("w-prefijo").value;
+  const customEl = el("w-prefijo-custom");
+  const prefijoFinal = prefijo==="otro" ? (customEl?customEl.value.trim():"") : prefijo;
+  const numero = el("w-telefono-num").value;
+  const ok = numero==="" || validatePhoneParts(prefijoFinal, numero);
+  el("w-telefono-error").textContent = ok ? "" : "Formato de teléfono no válido (prefijo + 6 a 12 dígitos).";
+}
+function wizardDniTouched(){
+  const v = el("w-dni").value;
+  el("w-dni-error").textContent = (dniNieTieneFormatoEspanol(v) && !validateDniNieFormat(v))
+    ? "La letra no corresponde con ese número de DNI/NIE — revisa el dato." : "";
+}
+function wizardEmailTouched(){
+  const v = el("w-email").value;
+  el("w-email-error").textContent = validateEmailFormat(v) ? "" : "Formato de email no válido.";
+}
+
+function radioOpt(name,val,current,title,sub){
+  const checked = current===val ? "checked" : "";
+  return `<label class="radio-option"><input type="radio" name="${name}" value="${val}" ${checked}/>
+    <div><div class="opt-title">${escapeHtml(title)}</div><div class="opt-sub">${escapeHtml(sub)}</div></div></label>`;
+}
+function getRadioValue(name){
+  const n = document.getElementsByName(name);
+  for(const r of n) if(r.checked) return r.value;
+  return null;
+}
+
+function wizardClinica(){
+  const w = APP.wizard;
+  const grupos = {};
+  RAMA_CLINICA.forEach((m,i)=>{ (grupos[m.grupo] = grupos[m.grupo]||[]).push({...m, idx:i}); });
+  let options = `<option value="">— Selecciona el motivo —</option>`;
+  Object.keys(grupos).forEach(g=>{
+    options += `<optgroup label="${escapeHtml(g)}">`;
+    grupos[g].forEach(m=> options += `<option value="${m.idx}" ${w.motivoClinicoIdx==m.idx?"selected":""}>${escapeHtml(m.motivo)}</option>`);
+    options += `</optgroup>`;
+  });
+  const sel = (w.motivoClinicoIdx!=null) ? RAMA_CLINICA[w.motivoClinicoIdx] : null;
+  const volverA = w.pacienteEncontrado ? "wizard-2-buscar" : "wizard-2-seguro";
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Servicios del hospital (algoritmo original de Adolfo — sin modificar)</div>
+  <h2>Selecciona el motivo asistencial</h2>
+  <div class="card">
+    <div class="field"><label>Motivo</label><select id="w-clinica-motivo" onchange="wizardClinicaPick(this.value)">${options}</select></div>
+    ${sel ? `
+      <div class="script-box"><span class="script-label">Acción</span>${escapeHtml(sel.accion)}</div>
+      <div class="script-box"><span class="script-label">Decir</span>${escapeHtml(sel.explicacion)}</div>
+      <div>Salida: ${outcomePill(sel.salida)}</div>
+    ` : ""}
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='${volverA}';render();">← Atrás</button>
+      <button class="btn btn-primary" ${sel?"":"disabled"} onclick="wizardClinicaNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardClinicaPick(idx){ APP.wizard.motivoClinicoIdx = idx===""? null : Number(idx); render(); }
+function wizardClinicaNext(){
+  const w = APP.wizard;
+  const sel = RAMA_CLINICA[w.motivoClinicoIdx];
+  w.salida = sel.salida;
+  w.motivo_llamada = sel.motivo;
+  w.unidad_plan_interes = sel.motivo;
+  w.canal = "Llamada entrante — Servicios del hospital";
+  APP.view = "wizard-3";
+  render();
+}
+function outcomePill(salida){
+  const map = {CITA_DIRECTA:["#1E7A3B","CITA DIRECTA"], GESTION_CASO:["#16515A","GESTIÓN DE CASO"], LEAD_SEGUIMIENTO:["#B97F1F","LEAD DE SEGUIMIENTO"], INFORMATIVO:["#6B7B7E","INFORMATIVO — SIN CITA"]};
+  const [c,l] = map[salida] || ["#6B7B7E",salida];
+  return `<span class="pill-outcome" style="background:${c}">${l}</span>`;
+}
+
+function wizardPlanSelect(){
+  const w = APP.wizard;
+  let options = `<option value="">— Selecciona el Plan de Salud —</option>`;
+  PLANES_SALUD.forEach(p=> options += `<option value="${p.id}" ${w.planId===p.id?"selected":""}>${escapeHtml(p.nombre)}${p.estado==="EN DESARROLLO"?" (en desarrollo)":""}</option>`);
+  const volverA = w.pacienteEncontrado ? "wizard-2-aseguradora" : "wizard-2-seguro";
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Planes de Salud${w.aseguradoraConfirmada!=null ? ` · Aseguradora: ${escapeHtml(w.aseguradoraConfirmada||"ninguna")}` : ""}</div>
+  <h2>¿Qué Plan de Salud le interesa?</h2>
+  <div class="card">
+    <div class="field"><label>Plan de Salud</label><select id="w-plan-select" onchange="wizardPlanPick(this.value)">${options}</select></div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='${volverA}';render();">← Atrás</button>
+      <button class="btn btn-primary" ${w.planId?"":"disabled"} onclick="APP.view='wizard-2-plan-ficha';render();">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardPlanPick(id){ APP.wizard.planId = id || null; render(); }
+
+function wizardPlanFicha(){
+  const w = APP.wizard;
+  const p = PLANES_SALUD.find(x=>x.id===w.planId);
+  const notaSeguro = w.aseguradoraConfirmada!=null
+    ? `Aseguradora confirmada: ${escapeHtml(w.aseguradoraConfirmada||"ninguna")}.`
+    : `Situación de aseguramiento declarada: ${escapeHtml({tiene:"tiene seguro/mutua", otra_comunidad:"nacional de otra comunidad, sin seguro", otra_acreditacion:"otras acreditaciones, sin seguro", ninguna:"sin ninguna acreditación"}[w.seguro] || "no especificada")}.`;
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">Ficha del plan ${p.estado==="EN DESARROLLO" ? '<span class="dev-tag">EN DESARROLLO</span>':''}</div>
+  <h2>${escapeHtml(p.nombre)}</h2>
+  <div class="card">
+    <p><b>Perfil / criterios:</b> ${escapeHtml(p.perfil)}</p>
+    <div class="script-box"><span class="script-label">Pregunta de cribado</span>${escapeHtml(p.cribado)}</div>
+    <div class="script-box"><span class="script-label">Decir</span>${escapeHtml(p.mensaje)}</div>
+    <p><b>Pruebas / protocolo:</b> ${escapeHtml(p.pruebas)}</p>
+    <p><b>Periodicidad:</b> ${escapeHtml(p.periodicidad)} &nbsp;·&nbsp; <b>Servicio de derivación:</b> ${escapeHtml(p.derivacion)}</p>
+    ${p.avisoDato ? `<div class="aviso-box"><b>Aviso de origen:</b> ${escapeHtml(p.avisoDato)}</div>` : ""}
+    ${p.oncologico ? `<div class="aviso-box"><b>Cribado oncológico:</b> si no tiene cobertura, Harmony NO sustituye este cribado — decirlo explícitamente antes de ofrecer la alternativa privada.</div>` : ""}
+    <p class="muted small">${notaSeguro}</p>
+
+    <div class="field" style="margin-top:14px;">
+      <label>¿Cubre la mutua este plan?</label>
+      <select id="w-cobertura">
+        <option value="">— Selecciona —</option>
+        <option value="SI">SI — cobertura directa</option>
+        <option value="AUTO">AUTO — requiere autorización previa</option>
+        <option value="NO">NO cubre</option>
+        <option value="SIN_SEGURO">No tiene seguro</option>
+      </select>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="APP.view='wizard-2-plan';render();">← Atrás</button>
+      <button class="btn btn-primary" onclick="wizardPlanCoberturaNext()">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardPlanCoberturaNext(){
+  const w = APP.wizard;
+  const p = PLANES_SALUD.find(x=>x.id===w.planId);
+  const cobertura = el("w-cobertura").value;
+  if(!cobertura){ alert("Indica la cobertura de la mutua."); return; }
+  w.cobertura = cobertura;
+  w.motivo_llamada = p.nombre;
+  w.unidad_plan_interes = p.nombre;
+  w.canal = "Llamada entrante — Plan de Salud";
+  if(cobertura === "SI"){
+    w.salida = "CITA_DIRECTA";
+    w.derivacionServicio = p.derivacion;
+    APP.view = "wizard-3";
+  } else if(cobertura === "AUTO"){
+    w.salida = "GESTION_CASO";
+    APP.view = "wizard-3";
+  } else {
+    w.harmonyOrigenPlan = p;
+    w.harmonyAvisoOncologico = p.oncologico;
+    w.categoria = "Harmony";
+    APP.view = "wizard-2-harmony";
+  }
+  render();
+}
+
+function findHarmonyEquivalencia(planNombreOMotivo){
+  return HARMONY_PROGRAMAS.find(h => planNombreOMotivo.toLowerCase().includes(h.motivo.toLowerCase().split(" ")[0]))
+      || null;
+}
+
+function wizardHarmony(){
+  const w = APP.wizard;
+  let equivalencia = null;
+  if(w.harmonyOrigenPlan){
+    const map = {corazon:0,diabetes:null,digestiva:12,femenina:0,masculina:13,pulmon:null,sueno:10,neurologico:11,osteoporosis:14};
+    const idx = map[w.harmonyOrigenPlan.id];
+    equivalencia = (idx!=null) ? HARMONY_PROGRAMAS[idx] : null;
+  }
+  let motivoOptions = `<option value="">— Selecciona el interés del paciente —</option>`;
+  HARMONY_PROGRAMAS.forEach((h,i)=> motivoOptions += `<option value="${i}" ${w.harmonyIdx==i?"selected":""}>${escapeHtml(h.motivo)}</option>`);
+  const chosen = (w.harmonyIdx!=null) ? HARMONY_PROGRAMAS[w.harmonyIdx] : equivalencia;
+
+  return `
+  ${stepsBar(1,3)}
+  <div class="kicker">HCB Harmony</div>
+  <h2>Área de interés</h2>
+  <div class="card">
+    ${w.harmonyOrigenPlan && w.harmonyAvisoOncologico ? `<div class="aviso-box"><b>Decir antes de continuar:</b> "Le informo de que este programa privado no sustituye el cribado que le correspondería por el sistema público; es un programa distinto, complementario."</div>` : ""}
+    ${w.harmonyOrigenPlan ? `<p class="muted">Viene del Plan de Salud <b>${escapeHtml(w.harmonyOrigenPlan.nombre)}</b> sin cobertura.</p>` : `
+    <div class="field"><label>¿Qué le interesa al paciente?</label><select id="w-harmony-motivo" onchange="wizardHarmonyPick(this.value)">${motivoOptions}</select></div>
+    `}
+    ${chosen ? `
+      <div class="script-box"><span class="script-label">Gancho</span>"HCB Harmony es nuestra unidad de ${escapeHtml(chosen.pilar)}: equipo de especialistas, tecnología hospitalaria y un plan 360° con resultados medibles."</div>
+      <p><b>Programa recomendado:</b> ${escapeHtml(chosen.programa)} — <b>${escapeHtml(chosen.precio)}</b></p>
+      <div class="script-box"><span class="script-label">Oferta y cierre</span>"Le propongo una cita informativa gratuita de 30 min con la coordinadora de Harmony, sin compromiso — o, si lo prefiere, se la agendamos ya mismo, tenemos huecos disponibles." — si hay interés alto, valoración completa 360€ (descontables si inicia el programa).</div>
+      <div class="field">
+        <label>Resultado de la llamada</label>
+        <select id="w-harmony-resultado">
+          <option value="">— Selecciona —</option>
+          <option value="acepta">Acepta cita informativa o valoración (agendar ahora)</option>
+          <option value="piensa">Pide pensarlo / consultar</option>
+          <option value="rechaza">Rechaza definitivamente</option>
+        </select>
+      </div>
+    ` : ""}
+    <div style="margin-top:14px;display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="wizardHarmonyBack()">← Atrás</button>
+      <button class="btn btn-primary" ${chosen?"":"disabled"} onclick="wizardHarmonyNext('${chosen?chosen.programa.replace(/'/g,""):""}','${chosen?chosen.precio:""}')">Continuar →</button>
+    </div>
+  </div>`;
+}
+function wizardHarmonyPick(idx){ APP.wizard.harmonyIdx = idx===""?null:Number(idx); render(); }
+function wizardHarmonyBack(){
+  const w = APP.wizard;
+  if(w.harmonyOrigenPlan){ APP.view = "wizard-2-plan-ficha"; }
+  else if(w.pacienteEncontrado){ APP.view = "wizard-2-buscar"; }
+  else { APP.view = "wizard-2-alta"; }
+  render();
+}
+function wizardHarmonyNext(programa, precio){
+  const w = APP.wizard;
+  const resultadoSel = el("w-harmony-resultado");
+  const resultado = resultadoSel ? resultadoSel.value : null;
+  if(!resultado){ alert("Selecciona el resultado de la llamada."); return; }
+  w.motivo_llamada = w.harmonyOrigenPlan ? w.harmonyOrigenPlan.nombre + " (sin cobertura → Harmony)" : "Consulta directa Harmony";
+  w.unidad_plan_interes = programa + " · Harmony";
+  w.canal = w.harmonyOrigenPlan ? "Llamada entrante — sin cobertura, derivado a Harmony" : "Llamada entrante — Harmony directo";
+  if(resultado === "acepta"){ w.salida = "CITA_DIRECTA"; w.derivacionServicio = "Harmony — " + programa; }
+  else if(resultado === "piensa"){ w.salida = "LEAD_SEGUIMIENTO"; w.estadoInicial = "Contactado, pendiente de decisión"; }
+  else { w.salida = "LEAD_SEGUIMIENTO"; w.estadoInicial = "No interesado"; }
+  APP.view = "wizard-3";
+  render();
+}
+
+function wizardCierre(){
+  const w = APP.wizard;
+  const citaExterna = (w.salida === "CITA_DIRECTA") && (w.motivoTipo === "asistencial" || w.motivoTipo === "plan");
+  const citaPropia = (w.salida === "CITA_DIRECTA") && !citaExterna;
+  return `
+  ${stepsBar(2,3)}
+  <div class="kicker">Paso 3 · Cierre</div>
+  <h2>Resultado: ${outcomePill(w.salida)}</h2>
+  <div class="card">
+    ${citaExterna ? `
+      <p>Servicio / programa: <b>${escapeHtml(w.derivacionServicio || w.unidad_plan_interes || "")}</b></p>
+      <div class="aviso-box" style="background:var(--mint2);border-left-color:var(--teal);color:var(--teal-dark);">
+        Esta cita se gestiona en la <b style="color:var(--teal-dark);">plataforma de citas del hospital</b> (no en este panel). Al confirmar, el lead queda registrado como <b style="color:var(--teal-dark);">Citado</b>.
+      </div>
+      <div class="field"><label>Centro</label>
+        <select id="w-cita-centro" onchange="toggleOtroCentro(this.value)">
+          <option value="">— Selecciona el centro —</option>
+          ${CENTROS_HCB.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}
+        </select>
+        <input type="text" id="w-cita-centro-otro" placeholder="Especifica el centro" class="hidden" style="margin-top:8px;"/>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="alert('En producción, aquí se abriría la plataforma de citas del hospital con los datos del paciente precargados.')">🔗 Abrir plataforma de citas del hospital</button>
+        <button class="btn btn-primary" onclick="wizardConfirmarCitaExterna()">Marcar como Citado</button>
+      </div>
+    ` : ""}
+
+    ${citaPropia ? `
+      <p>Servicio / programa: <b>${escapeHtml(w.derivacionServicio || w.unidad_plan_interes || "")}</b></p>
+      <p class="muted small">Cita en la propia plataforma de Harmony — las prestaciones y huecos están en nuestra BBDD.</p>
+      <div class="grid-2">
+        <div class="field"><label>Fecha</label><input type="date" id="w-cita-fecha"/></div>
+        <div class="field"><label>Hora</label><input type="time" id="w-cita-hora"/></div>
+      </div>
+      <div class="field"><label>Centro</label>
+        <select id="w-cita-centro" onchange="toggleOtroCentro(this.value)">
+          <option value="">— Selecciona el centro —</option>
+          ${CENTROS_HCB.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}
+        </select>
+        <input type="text" id="w-cita-centro-otro" placeholder="Especifica el centro" class="hidden" style="margin-top:8px;"/>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="wizardConfirmarCita()">Confirmar cita</button>
+    ` : ""}
+
+    ${w.salida === "LEAD_SEGUIMIENTO" ? `
+      <p>Estado inicial: ${estadoBadge(w.estadoInicial || "Nuevo / sin gestionar")}</p>
+      <div class="field"><label>Franja horaria preferida para recontactar</label><input type="text" id="w-franja" placeholder="Ej. tardes de 16 a 18h"/></div>
+      <button class="btn btn-primary btn-block" onclick="wizardConfirmarLead()">Guardar lead de seguimiento</button>
+    ` : ""}
+
+    ${w.salida === "GESTION_CASO" ? `
+      <p>Se abre gestión de caso; se informa al paciente del plazo (24-48h) y se le da un identificador.</p>
+      <button class="btn btn-primary btn-block" onclick="wizardConfirmarCaso()">Abrir gestión de caso</button>
+    ` : ""}
+
+    ${w.salida === "INFORMATIVO" ? `
+      <p>No procede dar cita — se ha explicado al paciente el motivo. No es necesario crear un lead.</p>
+      <button class="btn btn-primary btn-block" onclick="wizardFinSinLead()">Finalizar llamada</button>
+    ` : ""}
+
+    <div style="margin-top:10px;">
+      <button class="btn btn-ghost" onclick="goTo('wizard')">Cancelar y volver al inicio del wizard</button>
+    </div>
+  </div>`;
+}
+
+function esPacienteLabel(w){
+  if(w.pacienteEncontrado) return "Sí, ya es paciente de HCB (encontrado en BBDD)";
+  if(w.esPacienteResp === "si") return "Decía ser paciente, no encontrado — dado de alta como nuevo";
+  return "No, paciente nuevo";
+}
+function computeTieneSeguroLabel(w){
+  if(w.motivoTipo === "asistencial") return w.pacienteEncontrado ? "Sí (paciente ya registrado)" : (w.seguro==="tiene" ? "Sí" : "No");
+  if(w.motivoTipo === "plan"){
+    if(w.aseguradoraConfirmada!=null) return w.aseguradoraConfirmada ? "Sí — " + w.aseguradoraConfirmada : "No";
+    return (w.cobertura === "SIN_SEGURO") ? "No" : "Sí";
+  }
+  if(w.motivoTipo === "harmony") return "No aplica (Harmony es privado)";
+  return "No lo sabe / no consta";
+}
+
+function toggleOtroCentro(value){
+  const otro = el("w-cita-centro-otro");
+  if(!otro) return;
+  if(value === "Otro centro (especificar)"){ otro.classList.remove("hidden"); otro.focus(); }
+  else { otro.classList.add("hidden"); otro.value=""; }
+}
+async function wizardConfirmarCitaExterna(){
+  const w = APP.wizard;
+  let centroSel = el("w-cita-centro").value;
+  const centro = centroSel === "Otro centro (especificar)" ? el("w-cita-centro-otro").value.trim() : centroSel;
+  if(!centro){ alert("Selecciona el centro."); return; }
+  const lead = newLead({
+    canal: w.canal || "Llamada entrante",
+    categoria: w.categoria || "Sin clasificar",
+    nombre_apellidos: w.nombre, telefono: w.telefono,
+    dni_nie: w.dni || "", email: w.email || "", es_paciente_hospital: esPacienteLabel(w),
+    centro: centro,
+    tiene_seguro: computeTieneSeguroLabel(w),
+    motivo_llamada: w.motivo_llamada, unidad_plan_interes: w.unidad_plan_interes,
+    estado: "Citado",
+    resultado_final: "Cita gestionada en la plataforma de citas del hospital",
+  });
+  await addObservacion(lead, `Cita gestionada en la plataforma de citas del hospital (${centro}). Servicio: ${w.derivacionServicio||w.unidad_plan_interes}.`);
+  APP.wizard.despedida = `Le confirmo que su cita quedará gestionada en ${centro}. Recibirá confirmación por parte del hospital.`;
+  await loadAllLeads();
+  APP.view = "wizard-done";
+  render();
+}
+async function wizardConfirmarCita(){
+  const w = APP.wizard;
+  const fecha = el("w-cita-fecha").value, hora = el("w-cita-hora").value;
+  let centroSel = el("w-cita-centro").value;
+  const centro = centroSel === "Otro centro (especificar)" ? el("w-cita-centro-otro").value.trim() : centroSel;
+  if(!fecha || !hora || !centro){ alert("Completa fecha, hora y centro."); return; }
+  const lead = newLead({
+    canal: w.canal || "Llamada entrante",
+    categoria: w.categoria || "Sin clasificar",
+    nombre_apellidos: w.nombre, telefono: w.telefono,
+    dni_nie: w.dni || "", email: w.email || "", es_paciente_hospital: esPacienteLabel(w),
+    centro: centro,
+    tiene_seguro: computeTieneSeguroLabel(w),
+    motivo_llamada: w.motivo_llamada, unidad_plan_interes: w.unidad_plan_interes,
+    estado: "Citado",
+    proxima_accion_fecha: fecha+"T"+hora,
+    resultado_final: "Cita agendada",
+  });
+  await addObservacion(lead, `Cita confirmada el ${fecha} a las ${hora} en ${centro}. Servicio: ${w.derivacionServicio||w.unidad_plan_interes}.`);
+  APP.wizard.despedida = `Le confirmo: cita el ${fecha} a las ${hora} en ${centro}. Recibirá confirmación por mensaje.`;
+  await loadAllLeads();
+  APP.view = "wizard-done";
+  render();
+}
+async function wizardConfirmarLead(){
+  const w = APP.wizard;
+  const franja = el("w-franja") ? el("w-franja").value.trim() : "";
+  const lead = newLead({
+    canal: w.canal || "Llamada entrante",
+    categoria: w.categoria || "Sin clasificar",
+    nombre_apellidos: w.nombre, telefono: w.telefono,
+    dni_nie: w.dni || "", email: w.email || "", es_paciente_hospital: esPacienteLabel(w),
+    tiene_seguro: computeTieneSeguroLabel(w),
+    motivo_llamada: w.motivo_llamada, unidad_plan_interes: w.unidad_plan_interes,
+    estado: w.estadoInicial || "Nuevo / sin gestionar",
+  });
+  await addObservacion(lead, `Lead creado desde llamada entrante.${franja ? " Franja horaria preferida: "+franja+"." : ""}`);
+  if((w.estadoInicial||"Nuevo / sin gestionar") === "Nuevo / sin gestionar"){
+    await addObservacion(lead, `Sugerencia: enviar plantilla WA-01 (Bienvenida) — ver Panel de Leads.`);
+  }
+  APP.wizard.despedida = "He tomado nota de todo, en breve nos pondremos en contacto con usted. Muchas gracias por su llamada.";
+  await loadAllLeads();
+  APP.view = "wizard-done";
+  render();
+}
+async function wizardConfirmarCaso(){
+  const w = APP.wizard;
+  const idCaso = uid("CASO");
+  const lead = newLead({
+    canal: w.canal || "Llamada entrante", id_lead: idCaso,
+    categoria: w.categoria || "Sin clasificar",
+    nombre_apellidos: w.nombre, telefono: w.telefono,
+    dni_nie: w.dni || "", email: w.email || "", es_paciente_hospital: esPacienteLabel(w),
+    tiene_seguro: computeTieneSeguroLabel(w),
+    motivo_llamada: w.motivo_llamada, unidad_plan_interes: w.unidad_plan_interes || "Gestión de caso",
+    estado: "Nuevo / sin gestionar",
+    resultado_final: "Gestión de caso abierta",
+  });
+  await addObservacion(lead, `Caso abierto con identificador ${idCaso}. Contacto en 24-48h.`);
+  APP.wizard.despedida = `He registrado su solicitud con el identificador ${idCaso}, nos pondremos en contacto con usted en el plazo indicado.`;
+  await loadAllLeads();
+  APP.view = "wizard-done";
+  render();
+}
+function wizardFinSinLead(){
+  APP.wizard.despedida = "Gracias por su llamada, que tenga un buen día.";
+  APP.view = "wizard-done";
+  render();
+}
+function wizardDone(){
+  return `
+  <div class="card" style="text-align:center;padding:40px 24px;">
+    <div style="font-size:40px;">✅</div>
+    <h2>Llamada registrada</h2>
+    <div class="script-box" style="text-align:left;"><span class="script-label">Despedida</span>${escapeHtml(APP.wizard.despedida||"")}</div>
+    <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-primary" onclick="goTo('wizard')">📞 Registrar otra llamada</button>
+      <button class="btn btn-outline" onclick="goTo('leads')">📋 Ver panel de leads</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   7) PANEL DE LEADS (hoja 07 · hoja 08 · hoja 09)
+   ============================================================ */
+let LEADS_FILTER = "TODOS";
+let CATEGORIA_FILTER = "TODAS";
+
+function renderLeadsPanel(){
+  const leads = APP.leads.filter(l =>
+    (LEADS_FILTER==="TODOS" || l.estado===LEADS_FILTER) &&
+    (CATEGORIA_FILTER==="TODAS" || l.categoria===CATEGORIA_FILTER)
+  );
+  const estadoOptions = ["TODOS", ...Object.keys(ESTADOS)];
+  const categoriaOptions = ["TODAS", "Servicios del Hospital", "Planes de Salud", "Harmony", "Sin clasificar"];
+  let rows = leads.map(l => `
+    <tr onclick="openLead('${l.id_lead}')">
+      <td>${escapeHtml(l.nombre_apellidos||"—")}</td>
+      <td>${escapeHtml(l.categoria||"—")}</td>
+      <td>${escapeHtml(l.canal||"—")}</td>
+      <td>${escapeHtml(l.unidad_plan_interes||"—")}</td>
+      <td>${estadoBadge(l.estado)}</td>
+      <td>${fmtDateTime(l.proxima_accion_fecha)}</td>
+      <td>${escapeHtml(l.agente_asignado||"—")}</td>
+    </tr>`).join("");
+  if(leads.length===0) rows = `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;">No hay leads con este filtro todavía.</td></tr>`;
+
+  return `
+  <div class="kicker">Base de leads</div>
+  <h1>Panel de leads</h1>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div class="field" style="max-width:260px;margin-bottom:0;">
+        <label>Filtrar por categoría</label>
+        <select onchange="CATEGORIA_FILTER=this.value; render();">
+          ${categoriaOptions.map(c=>`<option value="${c}" ${CATEGORIA_FILTER===c?"selected":""}>${c}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field" style="max-width:300px;margin-bottom:0;">
+        <label>Filtrar por estado</label>
+        <select onchange="LEADS_FILTER=this.value; render();">
+          ${estadoOptions.map(e=>`<option value="${e}" ${LEADS_FILTER===e?"selected":""}>${e}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-outline" onclick="exportLeadsToExcel()">⬇ Exportar a Excel (${leads.length})</button>
+  </div>
+  <table class="leads">
+    <thead><tr><th>Nombre</th><th>Categoría</th><th>Canal</th><th>Unidad / Plan</th><th>Estado</th><th>Próxima acción</th><th>Agente</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+function openLead(id){ APP.currentLeadId = id; APP.view = "lead-detail"; render(); }
+
+/* ------------------------------------------------------------
+   Exportación a Excel (.csv, se abre directamente en Excel) —
+   estructura mínima de referencia: Año, Trimestre, Fecha, Nombre,
+   Teléfono, Email (tomada del ejemplo de exportación de leads
+   histórico), con Categoría/Estado/Centro/Unidad/Canal/Agente
+   añadidos como columnas — en el ejemplo original esos datos iban
+   como filtro fijo del informe (una exportación por Estado+Centro);
+   aquí van por fila para poder exportar varios a la vez, y respeta
+   los filtros de Categoría y Estado activos en el panel.
+   Se genera en CSV (sin librerías externas: nada que Informática
+   tenga que servir desde un CDN ni que la red del hospital pueda
+   bloquear) — Excel y LibreOffice lo abren igual que un .xlsx.
+   ------------------------------------------------------------ */
+function trimestreDe(fecha){
+  const mes = fecha.getMonth()+1; // 1-12
+  return "Trim." + Math.ceil(mes/3);
+}
+function csvEscape(val){
+  const s = String(val==null ? "" : val);
+  if(/[",\n;]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+function exportLeadsToExcel(){
+  const leads = APP.leads.filter(l =>
+    (LEADS_FILTER==="TODOS" || l.estado===LEADS_FILTER) &&
+    (CATEGORIA_FILTER==="TODAS" || l.categoria===CATEGORIA_FILTER)
+  );
+  if(leads.length===0){ alert("No hay leads que exportar con este filtro."); return; }
+  const headers = ["Año","Trimestre","Fecha","Nombre","Teléfono","Email","Categoría","Estado","Centro","Unidad / Programa","Canal","Agente"];
+  const rows = leads.map(l=>{
+    const f = new Date(l.fecha_hora_entrada);
+    return [
+      f.getFullYear(), trimestreDe(f), f.toLocaleDateString("es-ES"),
+      l.nombre_apellidos || "", l.telefono || "", l.email || "(en blanco)",
+      l.categoria || "Sin clasificar", l.estado || "", l.centro || "", l.unidad_plan_interes || "", l.canal || "", l.agente_asignado || "",
+    ];
+  });
+  const lines = [headers, ...rows].map(r => r.map(csvEscape).join(";"));
+  const csv = "\uFEFF" + lines.join("\r\n"); // BOM para que Excel respete tildes/ñ
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const hoy = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `HCB_Leads_${hoy}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function getCurrentLead(){ return APP.leads.find(l=>l.id_lead===APP.currentLeadId); }
+
+function renderLeadDetail(){
+  const lead = getCurrentLead();
+  if(!lead) return `<p>Lead no encontrado. <button class="btn btn-outline" onclick="goTo('leads')">Volver</button></p>`;
+  const estadoOptions = Object.keys(ESTADOS).map(e=>`<option value="${e}" ${lead.estado===e?"selected":""}>${e}</option>`).join("");
+  const logs = [...lead.observaciones].reverse().map(o=>`
+    <div class="log-entry">
+      <div class="meta">${fmtDateTime(o.ts)} · ${escapeHtml(o.user)}</div>
+      <div class="txt">${escapeHtml(o.text)}</div>
+    </div>`).join("") || `<p class="muted small">Sin observaciones todavía.</p>`;
+
+  return `
+  <button class="btn btn-ghost btn-sm" onclick="goTo('leads')">← Volver al panel</button>
+  <div class="grid-2" style="margin-top:14px;align-items:flex-start;">
+    <div class="card">
+      <div class="kicker">Ficha del lead</div>
+      <h2>${escapeHtml(lead.nombre_apellidos||"Sin nombre")}</h2>
+      <p class="small muted">${escapeHtml(lead.id_lead)} · creado ${fmtDateTime(lead.fecha_hora_entrada)}</p>
+
+      <div class="field"><label>Teléfono</label><input type="text" value="${escapeHtml(lead.telefono)}" onchange="updateLeadField('telefono', this.value)"/></div>
+      <div class="field"><label>DNI / NIE</label><input type="text" value="${escapeHtml(lead.dni_nie||"")}" onchange="updateLeadField('dni_nie', this.value)"/></div>
+      <div class="field"><label>Email</label><input type="text" value="${escapeHtml(lead.email||"")}" onchange="updateLeadField('email', this.value)"/></div>
+      <div class="field"><label>¿Ya es paciente del hospital?</label>
+        <select onchange="updateLeadField('es_paciente_hospital', this.value)">
+          ${["Sí, ya es paciente de HCB","No, paciente nuevo","No lo sabe / no consta"].map(o=>`<option ${lead.es_paciente_hospital===o?"selected":""}>${o}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field"><label>Categoría</label>
+        <select onchange="updateLeadField('categoria', this.value)">
+          ${["Servicios del Hospital","Planes de Salud","Harmony","Sin clasificar"].map(c=>`<option ${lead.categoria===c?"selected":""}>${c}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field"><label>Canal</label><input type="text" value="${escapeHtml(lead.canal)}" onchange="updateLeadField('canal', this.value)"/></div>
+      <div class="field"><label>Centro</label>
+        <select onchange="updateLeadField('centro', this.value)">
+          <option value="" ${!lead.centro?"selected":""}>— Sin especificar —</option>
+          ${CENTROS_HCB.map(c=>`<option value="${escapeHtml(c)}" ${lead.centro===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field"><label>Unidad / Programa de interés</label><input type="text" value="${escapeHtml(lead.unidad_plan_interes)}" onchange="updateLeadField('unidad_plan_interes', this.value)"/></div>
+      <div class="field"><label>¿Tiene seguro?</label>
+        <select onchange="updateLeadField('tiene_seguro', this.value)">
+          <option ${lead.tiene_seguro==="Sí"?"selected":""}>Sí</option>
+          <option ${lead.tiene_seguro==="No"?"selected":""}>No</option>
+        </select>
+      </div>
+      <div class="field"><label>Agente asignado</label><input type="text" value="${escapeHtml(lead.agente_asignado)}" onchange="updateLeadField('agente_asignado', this.value)"/></div>
+
+      <div class="field">
+        <label>Estado</label>
+        ${lead.no_contactar ? `<div class="aviso-box"><b>NO VOLVER A CONTACTAR</b> — estado bloqueado.</div>` : `
+        <select onchange="updateLeadEstado(this.value)">${estadoOptions}</select>`}
+      </div>
+      <div class="field"><label>Próxima acción</label>
+        <input type="datetime-local" value="${lead.proxima_accion_fecha||""}" ${lead.no_contactar?"disabled":""} onchange="updateLeadField('proxima_accion_fecha', this.value)"/>
+      </div>
+
+      <div class="field">
+        <label><input type="checkbox" ${lead.no_contactar?"checked disabled":""} onchange="markNoContactar(this.checked)"/> No volver a contactar (irreversible desde esta pantalla)</label>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-amber btn-sm" ${lead.no_contactar?"disabled":""} onclick="showWaModal('WA-01')">Ver WA-01 Bienvenida</button>
+        <button class="btn btn-amber btn-sm" ${lead.no_contactar?"disabled":""} onclick="showWaModal('WA-03')">Ver WA-03 Cumpleaños</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kicker">Observaciones — histórico, no editable</div>
+      <p class="small muted">Solo se puede añadir. Ninguna línea existente se puede editar ni borrar.</p>
+      <div class="log-list">${logs}</div>
+      <div class="add-comment-row">
+        <textarea id="new-comment" rows="2" placeholder="Añadir comentario…"></textarea>
+        <button class="btn btn-primary" onclick="submitComment()">Enviar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function updateLeadField(field, value){
+  const lead = getCurrentLead(); if(!lead) return;
+  lead[field] = value;
+  await saveLead(lead);
+}
+async function updateLeadEstado(nuevoEstado){
+  const lead = getCurrentLead(); if(!lead) return;
+  const anterior = lead.estado;
+  lead.estado = nuevoEstado;
+  await addObservacion(lead, `Cambio de estado: "${anterior}" → "${nuevoEstado}".`);
+  const waCode = ESTADO_A_WA[nuevoEstado];
+  await loadAllLeads();
+  render();
+  if(waCode) showWaModal(waCode);
+}
+async function markNoContactar(checked){
+  if(!checked) return;
+  if(!confirm("Esta acción es irreversible desde esta pantalla. ¿Confirmas marcar NO VOLVER A CONTACTAR?")) { render(); return; }
+  const lead = getCurrentLead(); if(!lead) return;
+  lead.no_contactar = true;
+  await addObservacion(lead, "Marcado NO VOLVER A CONTACTAR a petición del paciente.");
+  await loadAllLeads();
+  render();
+}
+async function submitComment(){
+  const txt = el("new-comment").value.trim();
+  if(!txt) return;
+  const lead = getCurrentLead(); if(!lead) return;
+  await addObservacion(lead, txt);
+  await loadAllLeads();
+  render();
+}
+
+/* ============================================================
+   8) MODALES: plantillas de WhatsApp y objeciones generales
+   ============================================================ */
+function showWaModal(code){ APP.modal = {type:"wa", code}; render(); }
+function showObjecionesModal(){ APP.modal = {type:"objeciones"}; render(); }
+function closeModal(){ APP.modal = null; render(); }
+
+async function marcarWaEnviado(code){
+  const lead = getCurrentLead();
+  if(lead){ await addObservacion(lead, `Plantilla ${code} (${WA_TEMPLATES[code].nombre}) enviada.`); await loadAllLeads(); }
+  closeModal();
+}
+
+function renderModal(){
+  if(!APP.modal) return "";
+  if(APP.modal.type === "objeciones"){
+    const rows = OBJECIONES.map(o=>`<div class="log-entry"><div class="meta">${escapeHtml(o.obj)}</div><div class="txt">${escapeHtml(o.resp)}</div></div>`).join("");
+    return `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+      <div class="modal"><h3>Objeciones generales</h3><div class="log-list" style="max-height:60vh;">${rows}</div>
+      <div class="modal-close-row"><button class="btn btn-outline" onclick="closeModal()">Cerrar</button></div></div></div>`;
+  }
+  if(APP.modal.type === "wa"){
+    const t = WA_TEMPLATES[APP.modal.code];
+    const lead = getCurrentLead();
+    const vars = lead ? {nombre:lead.nombre_apellidos, plan:lead.unidad_plan_interes, enlace:"https://harmony.hcb.es/reserva", fecha:fmtDateTime(lead.proxima_accion_fecha), centro:"HCB"} : {nombre:"{{nombre}}", plan:"{{plan}}", enlace:"{{enlace}}", fecha:"{{fecha}}", centro:"{{centro}}"};
+    const texto = fillTemplate(t.texto, vars);
+    return `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+      <div class="modal">
+        <h3>${APP.modal.code} · ${escapeHtml(t.nombre)}</h3>
+        <div class="wa-text">${escapeHtml(texto)}</div>
+        <div class="modal-close-row">
+          <button class="btn btn-ghost" onclick="closeModal()">Cerrar</button>
+          ${lead ? `<button class="btn btn-primary" onclick="marcarWaEnviado('${APP.modal.code}')">Marcar como enviado</button>` : ""}
+        </div>
+      </div></div>`;
+  }
+  return "";
+}
+
+/* ============================================================
+   9) ARRANQUE
+   ============================================================ */
+render();
+</script>
+</body>
+</html>
