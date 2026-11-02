@@ -157,6 +157,17 @@ table.leads tr:hover{background:var(--mint);cursor:pointer;}
 
 /* ---------- footer ---------- */
 .footer-note{margin-top:40px;padding-top:16px;border-top:1px solid var(--mint2);font-size:11.5px;color:var(--grey);}
+.ro-grid{margin:10px 0;border:1px solid #E4E9E9;border-radius:8px;overflow:hidden;}
+.ro-row{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid #EEF2F2;font-size:13.5px;}
+.ro-row:last-child{border-bottom:none;}
+.ro-label{flex:0 0 190px;color:var(--teal-dark);font-weight:700;font-size:12.5px;}
+.ro-val{flex:1;word-break:break-word;}
+.gestion-box{background:#F3F9F9;border:1px solid #CFE3E3;border-radius:10px;padding:14px;margin:12px 0;}
+.guia-box{background:#FBF8EE;border-left:4px solid var(--amber);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:13.5px;}
+.guia-box ul{margin:6px 0 0 18px;padding:0;}
+option.f-on{font-weight:700;color:#12302f;}
+option.f-off{color:#B9C3C3;font-weight:400;}
+.quick-notes{display:flex;gap:6px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -215,42 +226,42 @@ const PLANES_SALUD = [
    mensaje:"Ese programa es la revisión de Salud Digestiva y Colon 50+: test de sangre oculta en heces y, según resultado, colonoscopia o gastroscopia, con analítica específica y SIBO si procede, valorado por Digestivo.",
    pruebas:"Test de sangre oculta en heces, colonoscopia, gastroscopia. Adjunto a Digestivo: analítica específica, SIBO.",
    periodicidad:"3 años", derivacion:"Digestivo",
-   equivalente:"Programa Salud Digestiva Harmony (parcial — NO incluye colonoscopia de cribado oncológico).", precioEquivalente:"590€"},
+   equivalente:"Programa Salud Digestiva de Estética y Longevidad (parcial — NO incluye colonoscopia de cribado oncológico).", precioEquivalente:"590€"},
   {id:"femenina", nombre:"Salud Femenina 40+/50+", estado:"COMPLETO", oncologico:true,
    perfil:"Mujeres 40-75 años, en seguimiento habitual o sin revisión reciente. Criterios BBDD: sin revisión ginecológica en 12 meses; sin citología/VPH en 24 meses; ≥50 años sin mamografía en 2025-2026.",
    cribado:"¿Cuándo fue su última revisión ginecológica o mamografía?",
    mensaje:"Le proponemos una revisión ginecológica completa, muy recomendable a partir de los 40-50 años: citología, VPH, ecografía ginecológica, mamografía y ecografía mamaria.",
    pruebas:"Citología, VPH, ecografía ginecológica, mamografía, ecografía mamaria.",
    periodicidad:"Anual", derivacion:"Ginecología",
-   equivalente:"Programa Hormonal Harmony (parcial — NO incluye citología/mamografía).", precioEquivalente:"690€"},
+   equivalente:"Programa Hormonal de Estética y Longevidad (parcial — NO incluye citología/mamografía).", precioEquivalente:"690€"},
   {id:"masculina", nombre:"Salud Masculina 50+ (revisión urológica)", estado:"COMPLETO", oncologico:true,
    perfil:"Hombres ≥50 años, con o sin síntomas urológicos. Criterios BBDD: no vistos por Urología en 12 meses; sin seguimiento activo.",
    cribado:"¿Ha tenido alguna vez molestias urinarias o le han revisado la próstata?",
    mensaje:"A partir de los 50 años recomendamos una revisión urológica preventiva: PSA, analítica, ecografía prostática/renal-vesical y uroflujometría.",
    pruebas:"PSA, analítica, ecografía prostática/renal-vesical, uroflujometría.",
    periodicidad:"Anual", derivacion:"Urología",
-   equivalente:"Programa Salud Sexual Harmony (parcial — NO incluye cribado de PSA/próstata).", precioEquivalente:"490€"},
+   equivalente:"Programa Salud Sexual de Estética y Longevidad (parcial — NO incluye cribado de PSA/próstata).", precioEquivalente:"490€"},
   {id:"pulmon", nombre:"Pulmón del Fumador y Salud Respiratoria", estado:"EN DESARROLLO", oncologico:false,
    perfil:"Fumadores activos o exfumadores <15 años, o síntomas respiratorios (tos crónica, disnea).",
    cribado:"¿Es usted fumador o exfumador? ¿Cuántos años lleva o llevaba fumando? ¿Nota tos persistente o falta de aire?",
    mensaje:"Ese programa es la revisión de Pulmón del Fumador y Salud Respiratoria: espirometría, radiografía y, si procede, TAC y analítica específica, valorado por Neumología.",
    pruebas:"Espirometría, radiografía, TAC, analítica específica.",
    periodicidad:"Anual", derivacion:"Neumología",
-   equivalente:"Sin equivalente Harmony. No ofrecer alternativa privada.", precioEquivalente:"—"},
+   equivalente:"Sin equivalente en Estética y Longevidad. No ofrecer alternativa privada.", precioEquivalente:"—"},
   {id:"sueno", nombre:"Sueño, Cansancio y Ronquidos", estado:"EN DESARROLLO", oncologico:false,
    perfil:"Personas con ronquidos, cansancio diurno, pausas respiratorias observadas por la pareja, o sospecha de apnea.",
    cribado:"¿Ronca de forma habitual, se despierta cansado, o le han comentado que hace pausas al respirar mientras duerme?",
    mensaje:"Ese programa evalúa el sueño con polisomnografía y espirometría, valorado por Neumología, ORL y Cardiología según el caso.",
    pruebas:"Polisomnografía, espirometría; tratamiento por ORL de pólipos/obstrucciones si procede.",
    periodicidad:"Anual", derivacion:"Neumología / ORL / Cardiología",
-   equivalente:"Programa Sueño y Descanso Harmony — EQUIVALENCIA ALTA (incluye polisomnografía hospitalaria de serie).", precioEquivalente:"590€"},
+   equivalente:"Programa Sueño y Descanso de Estética y Longevidad — EQUIVALENCIA ALTA (incluye polisomnografía hospitalaria de serie).", precioEquivalente:"590€"},
   {id:"neurologico", nombre:"Chequeo Neurológico / Memoria 60+", estado:"EN DESARROLLO", oncologico:false,
    perfil:"Personas ≥60 años con quejas de memoria/concentración, o antecedentes familiares de deterioro cognitivo.",
    cribado:"¿Tiene 60 años o más? ¿Ha notado usted o su familia fallos de memoria o de concentración recientes?",
    mensaje:"Ese programa es el Chequeo Neurológico y de Memoria 60+: cribado cognitivo, analítica y RNM valorados por Neurología, con evaluación neuropsicológica.",
    pruebas:"RNM, cribado cognitivo, analítica, evaluación neuropsicológica; en <75 años, según indicación: PET cerebral, RNM de perfusión, punción lumbar.",
    periodicidad:"Anual", derivacion:"Neurología / Neuropsicología",
-   equivalente:"Programa Neurológico y Cognitivo Harmony — EQUIVALENCIA ALTA.", precioEquivalente:"980€"},
+   equivalente:"Programa Neurológico y Cognitivo de Estética y Longevidad — EQUIVALENCIA ALTA.", precioEquivalente:"980€"},
   {id:"osteoporosis", nombre:"Osteoporosis y Salud Ósea", estado:"EN DESARROLLO", oncologico:false,
    perfil:"Mujeres postmenopáusicas, mayores de 65 años, o con factores de riesgo de fractura.",
    cribado:"¿Es usted mujer postmenopáusica o mayor de 65 años? ¿Tiene antecedentes familiares de osteoporosis o fracturas por fragilidad?",
@@ -323,7 +334,7 @@ function buscarPacientePorDni(dni){
 }
 
 
-const HARMONY_PROGRAMAS = [
+const ESTETICA_PROGRAMAS = [
   {motivo:"Salud Hormonal / menopausia / perimenopausia", pilar:"Salud Hormonal · Longevidad", programa:"Programa Hormonal", precio:"690€"},
   {motivo:"Energía / vitalidad / capilar (hombre)", pilar:"Medicina Regenerativa · Capilar", programa:"PRP / infusiones IV + valoración capilar", precio:"Variable"},
   {motivo:"Estética / dermatología", pilar:"Estética Regenerativa", programa:"Estética integral / aparatología", precio:"Variable"},
@@ -341,14 +352,25 @@ const HARMONY_PROGRAMAS = [
   {motivo:"Osteoporosis", pilar:"Longevidad", programa:"Longevidad Essential / Executive (DEXA)", precio:"900€ / 3.450€"},
 ];
 
+const ESTETICA_AREAS = [
+  {motivo:"Medicina Estética Regenerativa", pilar:"Medicina Estética Regenerativa", programa:"Medicina estética regenerativa (a medida tras valoración)", precio:"Variable"},
+  {motivo:"Estética Avanzada", pilar:"Estética Avanzada", programa:"Estética avanzada facial y corporal", precio:"Variable"},
+  {motivo:"Cirugía Plástica", pilar:"Cirugía Plástica", programa:"Consulta de Cirugía Plástica", precio:"Según valoración"},
+  {motivo:"Salud Capilar", pilar:"Salud Capilar", programa:"Programa Capilar", precio:"890€"},
+  {motivo:"Control de Peso y Composición Corporal", pilar:"Control de Peso y Composición Corporal", programa:"Programa Control de Peso", precio:"590€ (970€ con GLP-1)"},
+  {motivo:"Salud Hormonal y Metabólica", pilar:"Salud Hormonal y Metabólica", programa:"Programa Hormonal", precio:"690€"},
+  {motivo:"Longevidad y Well-Aging", pilar:"Longevidad y Well-Aging", programa:"Longevidad Essential / Synergy / Longevity", precio:"900€ / 1.600€ / 3.450€"},
+  {motivo:"Valoración 360", pilar:"medicina estética, longevidad y bienestar integral", programa:"Valoración 360", precio:"Según valoración"},
+];
+
 const OBJECIONES = [
-  {obj:"\"No me interesa, ya tengo mi médico.\"", resp:"Harmony no sustituye a su médico, es un complemento en longevidad y bienestar."},
+  {obj:"\"No me interesa, ya tengo mi médico.\"", resp:"Estética y Longevidad no sustituye a su médico, es un complemento en longevidad y bienestar."},
   {obj:"\"¿Esto es privado? No tengo seguro.\"", resp:"Sí, es un servicio privado. La cita informativa es completamente gratuita."},
-  {obj:"\"¿Cuánto cuesta?\"", resp:"La cita informativa es gratuita. La valoración completa son 360€, descontables si inicia el programa."},
+  {obj:"\"¿Cuánto cuesta?\"", resp:"La cita informativa es gratuita."},
   {obj:"\"Ahora mismo no tengo tiempo.\"", resp:"¿Cuándo sería mejor momento? Tenemos disponibilidad en varios horarios, incluidas tardes."},
   {obj:"\"¿Cómo han conseguido mi número?\"", resp:"Es paciente de HCB Hospitales; le informamos de este nuevo servicio. Si prefiere no recibir más llamadas, lo anoto ahora."},
   {obj:"\"Ya conozco algo similar en otra clínica.\"", resp:"La diferencia es estar dentro de un hospital, con tecnología diagnóstica y equipo médico completo."},
-  {obj:"\"¿Qué incluye la visita de valoración?\"", resp:"Una consulta de ~1 hora con nuestro equipo Harmony; conocemos su situación y presentamos su Plan 360°."},
+  {obj:"\"¿Qué incluye la visita de valoración?\"", resp:"Una consulta de ~1 hora con nuestro equipo de Estética y Longevidad; conocemos su situación y presentamos su Plan 360°."},
   {obj:"\"¿Lo cubre mi mutua?\" (Planes de Salud)", resp:"Consultar cobertura por mutua y por prueba (SI/AUTO/NO) antes de confirmar precio o autorización."},
   {obj:"\"No tengo síntomas, no lo necesito.\" (Planes de Salud)", resp:"La idea de estos planes es detectar a tiempo, antes de que aparezcan síntomas."},
   {obj:"\"Ya me hice una revisión similar hace poco.\"", resp:"¿Me indica cuándo fue y qué le hicieron? Valoramos si corresponde repetir según la periodicidad del plan."},
@@ -371,7 +393,7 @@ const ESTADOS = {
 const WA_TEMPLATES = {
   "WA-01":{nombre:"Bienvenida / solicitud recibida", texto:"Hola {{nombre}}, gracias por su interés en {{plan}}. Le llamaremos en el horario que nos ha indicado. Si lo prefiere, puede reservar usted mismo/a aquí → {{enlace}}."},
   "WA-02":{nombre:"No contesta — 3er intento", texto:"Hola {{nombre}}, hemos intentado localizarle sin éxito. Le dejamos la información de {{plan}} y el enlace para reservar cuando le venga bien → {{enlace}}."},
-  "WA-03":{nombre:"Cumpleaños", texto:"¡Feliz cumpleaños, {{nombre}}! Como regalo, le proponemos una valoración Harmony sin compromiso. ¿Se la reservamos?"},
+  "WA-03":{nombre:"Cumpleaños", texto:"¡Feliz cumpleaños, {{nombre}}! Como regalo, le proponemos una valoración de Estética y Longevidad sin compromiso. ¿Se la reservamos?"},
   "WA-04":{nombre:"Recordatorio de cita", texto:"Le recordamos su cita el {{fecha}} en {{centro}}. Si necesita cambiarla, avísenos con antelación respondiendo a este mensaje."},
   "WA-05":{nombre:"Recuperación de no-show", texto:"Hola {{nombre}}, vimos que no pudo acudir a su cita. Estos leads son recuperables — ¿le reprogramamos?"},
   "WA-06":{nombre:"Reactivación a 6 meses", texto:"Hola {{nombre}}, han pasado unos meses desde que hablamos de {{plan}}. Si su situación ha cambiado y quiere retomarlo, estamos a su disposición → {{enlace}}."},
@@ -383,6 +405,41 @@ const ESTADO_A_WA = {
   "No asistió":"WA-05",
   "No interesado":"WA-06",
 };
+
+
+/* Los 3 perfiles de usuario. Los asigna Informática; el usuario no puede elegirlo. Todos pueden cambiar estado (según su ámbito) y fecha de próxima acción. */
+const PERFILES = {
+  recepcion:   {label:"Recepción / Auxiliar",  autorizado:true,  gestiona:["Recepción/Auxiliares"]},
+  comercial:   {label:"Área Comercial",        autorizado:true,  gestiona:["Área Comercial"], extra:["No interesado"]},
+  responsable: {label:"Responsable de centro", autorizado:true,  gestiona:["Recepción/Auxiliares","Área Comercial","Responsable de centro"]},
+};
+function perfilActual(){ return PERFILES[(APP.user && APP.user.rol) || "recepcion"] || PERFILES.recepcion; }
+function puedeGestionar(){ return perfilActual().autorizado; }
+function estadosPermitidos(){
+  const p = perfilActual();
+  return Object.keys(ESTADOS).filter(e => p.gestiona.includes(ESTADOS[e].resp) || (p.extra||[]).includes(e));
+}
+
+/* Qué hacer con cada lead según su estado (criterios de la formación de gestión de leads). */
+const GUIA_ESTADO = {
+  "Nuevo / sin gestionar":["Enviar el WhatsApp de bienvenida y anotarlo en observaciones (fecha, hora y quién lo envía).","Llamar en el horario que ha indicado el lead; si no indicó ninguno, en la siguiente franja al envío del WhatsApp.","Si contesta y cita: pasar a «Citado» y anotar la fecha de la cita."],
+  "No contesta (intento 1/2/3)":["Leer antes las observaciones y comprobar si ya ha cogido cita sin que se actualizara el estado.","Llamar en una franja horaria distinta a la de la última llamada.","Si no se contacta, anotar lo ocurrido en observaciones. Tras el 3er intento: WhatsApp + email."],
+  "No contesta – enviado WA/email":["Enviar WhatsApp desde recepción y email desde el área comercial con la información específica de lo que solicitó.","Anotar fecha, hora y persona que lo envía.","Dejar fijada la próxima acción (nueva llamada)."],
+  "Contactado, pendiente de decisión":["Si pide que le llamemos meses después: anotar la fecha que propone y agendarla como próxima acción.","Enviar por email la información clave (equipo, programa) y anotarlo.","Comprobar que no haya cogido cita sin actualizar el estado."],
+  "Citado":["Enviar recordatorio de cita (WA-04).","Tras la fecha de la cita: comprobar si ha acudido y si ha contratado, y actualizar el estado.","Anotar en observaciones cualquier dato de interés."],
+  "No asistió":["Es un lead recuperable: llamar en franja horaria distinta a la última.","Ofrecer reprogramar (WA-05) y, si cita, pasar a «Citado».","Si no se logra contactar, anotar lo ocurrido."],
+  "Acudió + valoración/presupuesto":["Seguimiento diario por el Área Comercial.","Comprobar si ha contratado tras la consulta; si es así, pasar a «Contratado».","Si no, consultar con la comercial de la clínica en qué punto está y actualizar observaciones."],
+  "Contratado":["Sin acciones pendientes. Anotar en observaciones el programa o tratamiento contratado."],
+  "No interesado":["Anotar el motivo en observaciones (económico, embarazo/enfermedad, temporalidad, ya realizado en otro centro…).","Si es cirugía u obesidad y ya se lo ha realizado en otro centro: NO VOLVER A CONTACTAR.","En el resto de casos, reactivar a los 6 meses (WA-06)."],
+  "Queja / Sugerencia":["Confirmar que realmente lo es y no una petición de información de tratamientos.","Si lo es, agendar con la responsable del centro para reconducir la situación con el paciente."],
+};
+const NOTAS_RAPIDAS = [
+  "Llamado, no contesta.",
+  "Enviado WA de bienvenida.",
+  "Enviado email con información.",
+  "Contesta: pide que le llamemos en otro momento.",
+  "Cita concertada.",
+];
 
 /* ============================================================
    2) ESTADO DE LA APLICACIÓN Y UTILIDADES
@@ -456,7 +513,7 @@ async function loadAllLeads(){
   const leads = [];
   for(const k of keys){
     const v = await storageGet(k);
-    if(v) leads.push(v);
+    if(v){ if(v.categoria===('Harmo'+'ny')) v.categoria='Estética y Longevidad'; if(v.motivoTipo===('harmo'+'ny')) v.motivoTipo='estetica'; leads.push(v); }
   }
   leads.sort((a,b)=> new Date(b.fecha_hora_entrada) - new Date(a.fecha_hora_entrada));
   APP.leads = leads;
@@ -466,7 +523,7 @@ async function saveLead(lead){ await storageSet("lead:"+lead.id_lead, lead); }
 
 async function addObservacion(lead, texto){
   // Regla de negocio: SOLO se añade. Nunca se edita ni se borra una línea existente.
-  lead.observaciones.push({ts: nowIso(), user: APP.user.username, text: texto});
+  lead.observaciones.push({ts: nowIso(), user: APP.user.username, perfil: perfilActual().label, text: texto});
   await saveLead(lead);
 }
 
@@ -485,7 +542,7 @@ function newLead(fields){
     tiene_seguro: "No",
     motivo_llamada: "",
     unidad_plan_interes: "",
-    segmento_harmony: "",
+    segmento_estetica: "",
     estado: "Nuevo / sin gestionar",
     proxima_accion_fecha: "",
     observaciones: [],
@@ -523,11 +580,11 @@ function renderTopBar(){
     <div class="brand"><span class="dot"></span> HCB · PANEL DE LEADS</div>
     <nav>
       ${navBtn("home","Inicio")}
-      ${navBtn("wizard","Nueva llamada")}
+      ${navBtn("wizard","Nuevo lead")}
       ${navBtn("leads","Panel de leads")}
     </nav>
     <div class="session">
-      <span class="lock">🔒</span> ${escapeHtml(APP.user.username)} · Agente
+      <span class="lock">🔒</span> ${escapeHtml(APP.user.username)} · ${escapeHtml(perfilActual().label)}
       <button onclick="logout()">Cerrar sesión</button>
     </div>
   </div>`;
@@ -535,7 +592,7 @@ function renderTopBar(){
 
 function renderFooter(){
   return `<div class="footer-note container" style="max-width:1080px;margin:0 auto;">
-    Prototipo funcional HCB · Call Center + Harmony — autenticación simulada, pendiente de integrar con los sistemas
+    Prototipo funcional HCB · Estética y Longevidad — autenticación simulada, pendiente de integrar con los sistemas
     de seguridad del hospital. Datos guardados solo para esta demostración.
   </div>`;
 }
@@ -547,7 +604,7 @@ function goTo(view){
   render();
 }
 
-function logout(){ APP.user = null; APP.view="login"; render(); }
+function logout(){ APP.user = null; APP.modal = null; APP.view="login"; render(); }
 
 /* ============================================================
    4) LOGIN (simulado)
@@ -557,7 +614,7 @@ function renderLogin(){
   <div class="login-wrap">
     <div class="login-card">
       <div class="logo">HCB · Panel de Leads</div>
-      <div class="logo-sub">Call Center · Planes de Salud · Harmony</div>
+      <div class="logo-sub">Estética y Longevidad</div>
       <div class="field">
         <label>Usuario</label>
         <input type="text" id="login-user" placeholder="ana.ruiz" />
@@ -569,7 +626,7 @@ function renderLogin(){
       <button class="btn btn-primary btn-block" onclick="doLogin()">🔒 Iniciar sesión</button>
       <div id="login-error" class="small" style="color:var(--red);margin-top:8px;"></div>
       <div class="login-note">
-        Acceso simulado para esta demostración: cualquier usuario y contraseña no vacíos funcionan.
+        Acceso simulado para esta demostración: cualquier usuario y contraseña no vacíos funcionan. El perfil de cada usuario (Recepción / Auxiliar, Área Comercial o Responsable de centro) lo asigna Informática y el usuario no puede elegirlo. Solo para esta demostración se deduce del usuario: «comercial…» y «responsable…» entran con ese perfil; cualquier otro, como Recepción.
         La autenticación real y el cifrado los define Informática con los servidores de seguridad del hospital.
       </div>
     </div>
@@ -579,7 +636,9 @@ async function doLogin(){
   const u = el("login-user").value.trim();
   const p = el("login-pass").value.trim();
   if(!u || !p){ el("login-error").textContent = "Introduce usuario y contraseña."; return; }
-  APP.user = {username:u};
+  const ul = u.toLowerCase();
+  // DEMO: en producción el perfil lo asigna Informática a cada usuario; aquí se deduce del nombre de usuario.
+  APP.user = {username:u, rol: ul.startsWith("comercial") ? "comercial" : ul.startsWith("responsable") ? "responsable" : "recepcion"};
   APP.view = "home";
   await loadAllLeads();
   render();
@@ -598,10 +657,10 @@ function renderHome(){
   return `
   <div class="kicker">Bienvenida</div>
   <h1>Hola, ${escapeHtml(APP.user.username)}</h1>
-  <p class="muted">Registra cualquier llamada — entrante o saliente, Planes de Salud o Harmony — desde un único sitio.</p>
+  <p class="muted">Registra cualquier llamada — entrante o saliente, Planes de Salud o de Estética y Longevidad — desde un único sitio.</p>
 
   <div class="grid-2" style="margin:20px 0;">
-    <button class="btn btn-primary" style="padding:20px;font-size:16px;" onclick="goTo('wizard')">📞 Nueva llamada</button>
+    <button class="btn btn-primary" style="padding:20px;font-size:16px;" onclick="goTo('wizard')">📞 Nuevo lead</button>
     <button class="btn btn-outline" style="padding:20px;font-size:16px;" onclick="goTo('leads')">📋 Ver panel de leads (${total})</button>
   </div>
 
@@ -636,7 +695,7 @@ function renderWizard(){
   if(v === "wizard-2-clinica") return wizardClinica();
   if(v === "wizard-2-plan") return wizardPlanSelect();
   if(v === "wizard-2-plan-ficha") return wizardPlanFicha();
-  if(v === "wizard-2-harmony") return wizardHarmony();
+  if(v === "wizard-2-estetica") return wizardEstetica();
   if(v === "wizard-3") return wizardCierre();
   if(v === "wizard-done") return wizardDone();
   return wizardStep1();
@@ -662,10 +721,10 @@ function wizardStep1(){
   <div class="script-box"><span class="script-label">Decir</span>"HCB, ${saludoHora().toLowerCase()}, le atiende ${escapeHtml(APP.user.username)}. ¿En qué podemos ayudarle?"</div>
   <div class="card">
     <div class="radio-group">
-      ${radioOpt("w-motivotipo","asistencial", w.motivoTipo, "Servicios del hospital", "Cita AP: enfermería, pediatría, matrona, salud mental, odontología, trámites…")}
-      ${radioOpt("w-motivotipo","plan", w.motivoTipo, "Planes de Salud", "El paciente nombra el plan o describe un síntoma/edad que encaja con uno de los 9.")}
-      ${radioOpt("w-motivotipo","harmony", w.motivoTipo, "HCB Harmony", "Estética, longevidad, medicina regenerativa, capilar, control de peso…")}
-      ${radioOpt("w-motivotipo","confuso", w.motivoTipo, "No lo tengo claro", "Paciente confuso o disperso — se registra como lead para reclasificar.")}
+      ${radioOpt("w-motivotipo","asistencial", w.motivoTipo, "Servicios del hospital", "Cita AP: enfermería, pediatría, matrona, salud mental, odontología, trámites…", true)}
+      ${radioOpt("w-motivotipo","plan", w.motivoTipo, "Planes de Salud", "El paciente nombra el plan o describe un síntoma/edad que encaja con uno de los 9.", true)}
+      ${radioOpt("w-motivotipo","estetica", w.motivoTipo||"estetica", "HCB Estética y Longevidad", "Estética, longevidad, medicina regenerativa, capilar, control de peso…")}
+      ${radioOpt("w-motivotipo","confuso", w.motivoTipo, "No lo tengo claro", "Paciente confuso o disperso — se registra como lead para reclasificar.", true)}
     </div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="wizardStep1Next()">Continuar →</button>
   </div>`;
@@ -675,7 +734,7 @@ function wizardStep1Next(){
   if(!t){ alert("Selecciona una opción."); return; }
   const w = APP.wizard;
   w.motivoTipo = t;
-  w.categoria = {asistencial:"Servicios del Hospital", plan:"Planes de Salud", harmony:"Harmony", confuso:"Sin clasificar"}[t];
+  w.categoria = {asistencial:"Servicios del Hospital", plan:"Planes de Salud", estetica:"Estética y Longevidad", confuso:"Sin clasificar"}[t];
   APP.view = (t === "confuso") ? "wizard-2-confuso" : "wizard-2-espaciente";
   render();
 }
@@ -711,7 +770,7 @@ function wizardConfusoNext(){
 
 function wizardEsPaciente(){
   const w = APP.wizard;
-  const tituloRama = {asistencial:"Servicios del hospital", plan:"Planes de Salud", harmony:"HCB Harmony"}[w.motivoTipo];
+  const tituloRama = {asistencial:"Servicios del hospital", plan:"Planes de Salud", estetica:"HCB Estética y Longevidad"}[w.motivoTipo];
   return `
   ${stepsBar(1,3)}
   <div class="kicker">${escapeHtml(tituloRama)}</div>
@@ -749,7 +808,7 @@ function wizardBuscarPaciente(){
   <div class="card">
     <div class="field"><label>DNI / NIE</label>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="w-buscar-dni" value="${escapeHtml(w.dniBuscado||"")}" placeholder="12345678Z"/>
+        <input type="text" id="w-buscar-dni" value="${escapeHtml(w.dniBuscado||"12345678Z")}" placeholder="12345678Z"/>
         <button class="btn btn-outline" onclick="wizardBuscarDni()">🔎 Buscar</button>
       </div>
     </div>
@@ -787,7 +846,7 @@ function wizardUsarPacienteEncontrado(){
   w.aseguradoraFicha = p.aseguradora || "";
   if(w.motivoTipo === "plan"){ APP.view = "wizard-2-aseguradora"; }
   else if(w.motivoTipo === "asistencial"){ APP.view = "wizard-2-clinica"; }
-  else { APP.view = "wizard-2-harmony"; }
+  else { APP.view = "wizard-2-estetica"; }
   render();
 }
 function wizardIrAlta(){
@@ -865,7 +924,7 @@ function wizardAltaNext(){
   }
   w.telefono = prefijoFinal + " " + numero;
 
-  APP.view = (w.motivoTipo === "harmony") ? "wizard-2-harmony" : "wizard-2-seguro";
+  APP.view = (w.motivoTipo === "estetica") ? "wizard-2-estetica" : "wizard-2-seguro";
   render();
 }
 
@@ -943,9 +1002,9 @@ function wizardEmailTouched(){
   el("w-email-error").textContent = validateEmailFormat(v) ? "" : "Formato de email no válido.";
 }
 
-function radioOpt(name,val,current,title,sub){
+function radioOpt(name,val,current,title,sub,disabled){
   const checked = current===val ? "checked" : "";
-  return `<label class="radio-option"><input type="radio" name="${name}" value="${val}" ${checked}/>
+  return `<label class="radio-option" style="${disabled?"opacity:.45;cursor:not-allowed;":""}"><input type="radio" name="${name}" value="${val}" ${checked} ${disabled?"disabled":""}/>
     <div><div class="opt-title">${escapeHtml(title)}</div><div class="opt-sub">${escapeHtml(sub)}</div></div></label>`;
 }
 function getRadioValue(name){
@@ -1036,7 +1095,7 @@ function wizardPlanFicha(){
     <p><b>Pruebas / protocolo:</b> ${escapeHtml(p.pruebas)}</p>
     <p><b>Periodicidad:</b> ${escapeHtml(p.periodicidad)} &nbsp;·&nbsp; <b>Servicio de derivación:</b> ${escapeHtml(p.derivacion)}</p>
     ${p.avisoDato ? `<div class="aviso-box"><b>Aviso de origen:</b> ${escapeHtml(p.avisoDato)}</div>` : ""}
-    ${p.oncologico ? `<div class="aviso-box"><b>Cribado oncológico:</b> si no tiene cobertura, Harmony NO sustituye este cribado — decirlo explícitamente antes de ofrecer la alternativa privada.</div>` : ""}
+    ${p.oncologico ? `<div class="aviso-box"><b>Cribado oncológico:</b> si no tiene cobertura, Estética y Longevidad NO sustituye este cribado — decirlo explícitamente antes de ofrecer la alternativa privada.</div>` : ""}
     <p class="muted small">${notaSeguro}</p>
 
     <div class="field" style="margin-top:14px;">
@@ -1072,47 +1131,47 @@ function wizardPlanCoberturaNext(){
     w.salida = "GESTION_CASO";
     APP.view = "wizard-3";
   } else {
-    w.harmonyOrigenPlan = p;
-    w.harmonyAvisoOncologico = p.oncologico;
-    w.categoria = "Harmony";
-    APP.view = "wizard-2-harmony";
+    w.esteticaOrigenPlan = p;
+    w.esteticaAvisoOncologico = p.oncologico;
+    w.categoria = "Estética y Longevidad";
+    APP.view = "wizard-2-estetica";
   }
   render();
 }
 
-function findHarmonyEquivalencia(planNombreOMotivo){
-  return HARMONY_PROGRAMAS.find(h => planNombreOMotivo.toLowerCase().includes(h.motivo.toLowerCase().split(" ")[0]))
+function findEsteticaEquivalencia(planNombreOMotivo){
+  return ESTETICA_PROGRAMAS.find(h => planNombreOMotivo.toLowerCase().includes(h.motivo.toLowerCase().split(" ")[0]))
       || null;
 }
 
-function wizardHarmony(){
+function wizardEstetica(){
   const w = APP.wizard;
   let equivalencia = null;
-  if(w.harmonyOrigenPlan){
+  if(w.esteticaOrigenPlan){
     const map = {corazon:0,diabetes:null,digestiva:12,femenina:0,masculina:13,pulmon:null,sueno:10,neurologico:11,osteoporosis:14};
-    const idx = map[w.harmonyOrigenPlan.id];
-    equivalencia = (idx!=null) ? HARMONY_PROGRAMAS[idx] : null;
+    const idx = map[w.esteticaOrigenPlan.id];
+    equivalencia = (idx!=null) ? ESTETICA_PROGRAMAS[idx] : null;
   }
   let motivoOptions = `<option value="">— Selecciona el interés del paciente —</option>`;
-  HARMONY_PROGRAMAS.forEach((h,i)=> motivoOptions += `<option value="${i}" ${w.harmonyIdx==i?"selected":""}>${escapeHtml(h.motivo)}</option>`);
-  const chosen = (w.harmonyIdx!=null) ? HARMONY_PROGRAMAS[w.harmonyIdx] : equivalencia;
+  ESTETICA_AREAS.forEach((h,i)=> motivoOptions += `<option value="${i}" ${w.esteticaIdx==i?"selected":""}>${escapeHtml(h.motivo)}</option>`);
+  const chosen = (w.esteticaIdx!=null) ? ESTETICA_AREAS[w.esteticaIdx] : equivalencia;
 
   return `
   ${stepsBar(1,3)}
-  <div class="kicker">HCB Harmony</div>
+  <div class="kicker">HCB Estética y Longevidad</div>
   <h2>Área de interés</h2>
   <div class="card">
-    ${w.harmonyOrigenPlan && w.harmonyAvisoOncologico ? `<div class="aviso-box"><b>Decir antes de continuar:</b> "Le informo de que este programa privado no sustituye el cribado que le correspondería por el sistema público; es un programa distinto, complementario."</div>` : ""}
-    ${w.harmonyOrigenPlan ? `<p class="muted">Viene del Plan de Salud <b>${escapeHtml(w.harmonyOrigenPlan.nombre)}</b> sin cobertura.</p>` : `
-    <div class="field"><label>¿Qué le interesa al paciente?</label><select id="w-harmony-motivo" onchange="wizardHarmonyPick(this.value)">${motivoOptions}</select></div>
+    ${w.esteticaOrigenPlan && w.esteticaAvisoOncologico ? `<div class="aviso-box"><b>Decir antes de continuar:</b> "Le informo de que este programa privado no sustituye el cribado que le correspondería por el sistema público; es un programa distinto, complementario."</div>` : ""}
+    ${w.esteticaOrigenPlan ? `<p class="muted">Viene del Plan de Salud <b>${escapeHtml(w.esteticaOrigenPlan.nombre)}</b> sin cobertura.</p>` : `
+    <div class="field"><label>¿Qué le interesa al paciente?</label><select id="w-estetica-motivo" onchange="wizardEsteticaPick(this.value)">${motivoOptions}</select></div>
     `}
     ${chosen ? `
-      <div class="script-box"><span class="script-label">Gancho</span>"HCB Harmony es nuestra unidad de ${escapeHtml(chosen.pilar)}: equipo de especialistas, tecnología hospitalaria y un plan 360° con resultados medibles."</div>
+      <div class="script-box"><span class="script-label">Gancho</span>"HCB Estética y Longevidad es nuestra unidad de ${escapeHtml(chosen.pilar)}: equipo de especialistas, tecnología hospitalaria y un plan 360° con resultados medibles."</div>
       <p><b>Programa recomendado:</b> ${escapeHtml(chosen.programa)} — <b>${escapeHtml(chosen.precio)}</b></p>
-      <div class="script-box"><span class="script-label">Oferta y cierre</span>"Le propongo una cita informativa gratuita de 30 min con la coordinadora de Harmony, sin compromiso — o, si lo prefiere, se la agendamos ya mismo, tenemos huecos disponibles." — si hay interés alto, valoración completa 360€ (descontables si inicia el programa).</div>
+      <div class="script-box"><span class="script-label">Oferta y cierre</span>"Le propongo una cita informativa gratuita de 30 min con la coordinadora de Estética y Longevidad y el especialista de la unidad, sin compromiso."</div>
       <div class="field">
         <label>Resultado de la llamada</label>
-        <select id="w-harmony-resultado">
+        <select id="w-estetica-resultado">
           <option value="">— Selecciona —</option>
           <option value="acepta">Acepta cita informativa o valoración (agendar ahora)</option>
           <option value="piensa">Pide pensarlo / consultar</option>
@@ -1121,28 +1180,28 @@ function wizardHarmony(){
       </div>
     ` : ""}
     <div style="margin-top:14px;display:flex;gap:10px;">
-      <button class="btn btn-ghost" onclick="wizardHarmonyBack()">← Atrás</button>
-      <button class="btn btn-primary" ${chosen?"":"disabled"} onclick="wizardHarmonyNext('${chosen?chosen.programa.replace(/'/g,""):""}','${chosen?chosen.precio:""}')">Continuar →</button>
+      <button class="btn btn-ghost" onclick="wizardEsteticaBack()">← Atrás</button>
+      <button class="btn btn-primary" ${chosen?"":"disabled"} onclick="wizardEsteticaNext('${chosen?chosen.programa.replace(/'/g,""):""}','${chosen?chosen.precio:""}')">Continuar →</button>
     </div>
   </div>`;
 }
-function wizardHarmonyPick(idx){ APP.wizard.harmonyIdx = idx===""?null:Number(idx); render(); }
-function wizardHarmonyBack(){
+function wizardEsteticaPick(idx){ APP.wizard.esteticaIdx = idx===""?null:Number(idx); render(); }
+function wizardEsteticaBack(){
   const w = APP.wizard;
-  if(w.harmonyOrigenPlan){ APP.view = "wizard-2-plan-ficha"; }
+  if(w.esteticaOrigenPlan){ APP.view = "wizard-2-plan-ficha"; }
   else if(w.pacienteEncontrado){ APP.view = "wizard-2-buscar"; }
   else { APP.view = "wizard-2-alta"; }
   render();
 }
-function wizardHarmonyNext(programa, precio){
+function wizardEsteticaNext(programa, precio){
   const w = APP.wizard;
-  const resultadoSel = el("w-harmony-resultado");
+  const resultadoSel = el("w-estetica-resultado");
   const resultado = resultadoSel ? resultadoSel.value : null;
   if(!resultado){ alert("Selecciona el resultado de la llamada."); return; }
-  w.motivo_llamada = w.harmonyOrigenPlan ? w.harmonyOrigenPlan.nombre + " (sin cobertura → Harmony)" : "Consulta directa Harmony";
-  w.unidad_plan_interes = programa + " · Harmony";
-  w.canal = w.harmonyOrigenPlan ? "Llamada entrante — sin cobertura, derivado a Harmony" : "Llamada entrante — Harmony directo";
-  if(resultado === "acepta"){ w.salida = "CITA_DIRECTA"; w.derivacionServicio = "Harmony — " + programa; }
+  w.motivo_llamada = w.esteticaOrigenPlan ? w.esteticaOrigenPlan.nombre + " (sin cobertura → Estética y Longevidad)" : "Consulta directa Estética y Longevidad";
+  w.unidad_plan_interes = programa + " · Estética y Longevidad";
+  w.canal = w.esteticaOrigenPlan ? "Llamada entrante — sin cobertura, derivado a Estética y Longevidad" : "Llamada entrante — Estética y Longevidad directo";
+  if(resultado === "acepta"){ w.salida = "CITA_DIRECTA"; w.derivacionServicio = "Estética y Longevidad — " + programa; }
   else if(resultado === "piensa"){ w.salida = "LEAD_SEGUIMIENTO"; w.estadoInicial = "Contactado, pendiente de decisión"; }
   else { w.salida = "LEAD_SEGUIMIENTO"; w.estadoInicial = "No interesado"; }
   APP.view = "wizard-3";
@@ -1178,7 +1237,7 @@ function wizardCierre(){
 
     ${citaPropia ? `
       <p>Servicio / programa: <b>${escapeHtml(w.derivacionServicio || w.unidad_plan_interes || "")}</b></p>
-      <p class="muted small">Cita en la propia plataforma de Harmony — las prestaciones y huecos están en nuestra BBDD.</p>
+      <p class="muted small">Cita en la propia plataforma de de Estética y Longevidad — las prestaciones y huecos están en nuestra BBDD.</p>
       <div class="grid-2">
         <div class="field"><label>Fecha</label><input type="date" id="w-cita-fecha"/></div>
         <div class="field"><label>Hora</label><input type="time" id="w-cita-hora"/></div>
@@ -1226,7 +1285,7 @@ function computeTieneSeguroLabel(w){
     if(w.aseguradoraConfirmada!=null) return w.aseguradoraConfirmada ? "Sí — " + w.aseguradoraConfirmada : "No";
     return (w.cobertura === "SIN_SEGURO") ? "No" : "Sí";
   }
-  if(w.motivoTipo === "harmony") return "No aplica (Harmony es privado)";
+  if(w.motivoTipo === "estetica") return "No aplica (Estética y Longevidad es privado)";
   return "No lo sabe / no consta";
 }
 
@@ -1345,48 +1404,73 @@ function wizardDone(){
    ============================================================ */
 let LEADS_FILTER = "TODOS";
 let CATEGORIA_FILTER = "TODAS";
-
-function renderLeadsPanel(){
-  const leads = APP.leads.filter(l =>
+let CENTRO_FILTER = "TODOS";
+let UNIDAD_FILTER = "TODAS";
+function leadsFiltrados(){
+  return APP.leads.filter(l =>
     (LEADS_FILTER==="TODOS" || l.estado===LEADS_FILTER) &&
-    (CATEGORIA_FILTER==="TODAS" || l.categoria===CATEGORIA_FILTER)
+    (CATEGORIA_FILTER==="TODAS" || l.categoria===CATEGORIA_FILTER) &&
+    (CENTRO_FILTER==="TODOS" || (l.centro||"")===CENTRO_FILTER) &&
+    (UNIDAD_FILTER==="TODAS" || (l.unidad_plan_interes||"")===UNIDAD_FILTER)
   );
-  const estadoOptions = ["TODOS", ...Object.keys(ESTADOS)];
-  const categoriaOptions = ["TODAS", "Servicios del Hospital", "Planes de Salud", "Harmony", "Sin clasificar"];
+}
+function limpiarFiltros(){ LEADS_FILTER="TODOS"; CATEGORIA_FILTER="TODAS"; CENTRO_FILTER="TODOS"; UNIDAD_FILTER="TODAS"; render(); }
+
+function catalogoUnidades(cat){
+  const por = {
+    "Servicios del Hospital": RAMA_CLINICA.map(r=>r.motivo),
+    "Planes de Salud": PLANES_SALUD.map(p=>p.nombre),
+    "Estética y Longevidad": ESTETICA_AREAS.concat(ESTETICA_PROGRAMAS).map(h=>h.programa+" · Estética y Longevidad"),
+    "Sin clasificar": ["Por determinar"],
+  };
+  const cats = (cat && cat!=="TODAS") ? [cat] : Object.keys(por);
+  const set = new Set();
+  cats.forEach(c=>(por[c]||[]).forEach(v=>set.add(v)));
+  // valores ya guardados en leads de la categoría elegida que no estén en el catálogo
+  APP.leads.forEach(l=>{ if(l.unidad_plan_interes && (cats.includes(l.categoria))) set.add(l.unidad_plan_interes); });
+  return [...set].sort((a,b)=>a.localeCompare(b,"es"));
+}
+/* Desplegable de filtro: lista TODO el catálogo; en negrita y seleccionable solo lo que tiene datos; el resto en gris claro y bloqueado. */
+function filtroSelect(label, todosLabel, catalogo, conDatos, actual, setter){
+  const opts = [`<option value="${todosLabel}" class="f-on" ${actual===todosLabel?"selected":""}>${todosLabel}</option>`]
+    .concat(catalogo.map(v=>{
+      const on = conDatos.has(v) || v===actual;
+      return `<option value="${escapeHtml(v)}" class="${on?"f-on":"f-off"}" ${on?"":"disabled"} ${actual===v?"selected":""}>${escapeHtml(v)}</option>`;
+    }));
+  return `<div class="field" style="max-width:300px;margin-bottom:0;"><label>${label}</label>
+    <select onchange="${setter}=this.value; render();">${opts.join("")}</select></div>`;
+}
+function renderLeadsPanel(){
+  const leads = leadsFiltrados();
+  const hay = f => new Set(APP.leads.map(f).filter(Boolean));
+  const CATS = ["Servicios del Hospital","Planes de Salud","Estética y Longevidad","Sin clasificar"];
   let rows = leads.map(l => `
     <tr onclick="openLead('${l.id_lead}')">
       <td>${escapeHtml(l.nombre_apellidos||"—")}</td>
       <td>${escapeHtml(l.categoria||"—")}</td>
+      <td>${escapeHtml(l.centro||"—")}</td>
       <td>${escapeHtml(l.canal||"—")}</td>
       <td>${escapeHtml(l.unidad_plan_interes||"—")}</td>
       <td>${estadoBadge(l.estado)}</td>
       <td>${fmtDateTime(l.proxima_accion_fecha)}</td>
       <td>${escapeHtml(l.agente_asignado||"—")}</td>
     </tr>`).join("");
-  if(leads.length===0) rows = `<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;">No hay leads con este filtro todavía.</td></tr>`;
+  if(leads.length===0) rows = `<tr><td colspan="8" class="muted" style="text-align:center;padding:24px;">No hay leads con este filtro todavía.</td></tr>`;
 
   return `
   <div class="kicker">Base de leads</div>
   <h1>Panel de leads</h1>
   <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div class="field" style="max-width:260px;margin-bottom:0;">
-        <label>Filtrar por categoría</label>
-        <select onchange="CATEGORIA_FILTER=this.value; render();">
-          ${categoriaOptions.map(c=>`<option value="${c}" ${CATEGORIA_FILTER===c?"selected":""}>${c}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field" style="max-width:300px;margin-bottom:0;">
-        <label>Filtrar por estado</label>
-        <select onchange="LEADS_FILTER=this.value; render();">
-          ${estadoOptions.map(e=>`<option value="${e}" ${LEADS_FILTER===e?"selected":""}>${e}</option>`).join("")}
-        </select>
-      </div>
+      ${filtroSelect("Filtrar por categoría","TODAS",CATS,hay(l=>l.categoria),CATEGORIA_FILTER,"UNIDAD_FILTER='TODAS'; CATEGORIA_FILTER")}
+      ${filtroSelect("Hospital de referencia","TODOS",CENTROS_HCB,hay(l=>l.centro),CENTRO_FILTER,"CENTRO_FILTER")}
+      ${filtroSelect("Unidad / Programa","TODAS",catalogoUnidades(CATEGORIA_FILTER),hay(l=>l.unidad_plan_interes),UNIDAD_FILTER,"UNIDAD_FILTER")}
+      ${filtroSelect("Filtrar por estado","TODOS",Object.keys(ESTADOS),hay(l=>l.estado),LEADS_FILTER,"LEADS_FILTER")}
     </div>
-    <button class="btn btn-outline" onclick="exportLeadsToExcel()">⬇ Exportar a Excel (${leads.length})</button>
+    <div style="display:flex;gap:8px;"><button class="btn btn-ghost" onclick="limpiarFiltros()">Quitar filtros</button><button class="btn btn-outline" onclick="exportLeadsToExcel()">⬇ Exportar a Excel (${leads.length})</button></div>
   </div>
   <table class="leads">
-    <thead><tr><th>Nombre</th><th>Categoría</th><th>Canal</th><th>Unidad / Plan</th><th>Estado</th><th>Próxima acción</th><th>Agente</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Categoría</th><th>Hospital</th><th>Canal</th><th>Unidad / Plan</th><th>Estado</th><th>Próxima acción</th><th>Agente</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
 }
@@ -1415,10 +1499,7 @@ function csvEscape(val){
   return s;
 }
 function exportLeadsToExcel(){
-  const leads = APP.leads.filter(l =>
-    (LEADS_FILTER==="TODOS" || l.estado===LEADS_FILTER) &&
-    (CATEGORIA_FILTER==="TODAS" || l.categoria===CATEGORIA_FILTER)
-  );
+  const leads = leadsFiltrados();
   if(leads.length===0){ alert("No hay leads que exportar con este filtro."); return; }
   const headers = ["Año","Trimestre","Fecha","Nombre","Teléfono","Email","Categoría","Estado","Centro","Unidad / Programa","Canal","Agente"];
   const rows = leads.map(l=>{
@@ -1445,65 +1526,91 @@ function exportLeadsToExcel(){
 
 function getCurrentLead(){ return APP.leads.find(l=>l.id_lead===APP.currentLeadId); }
 
+function fmtProxima(v){
+  if(!v) return "sin fecha";
+  const d = new Date(v); if(isNaN(d)) return v;
+  return d.toLocaleDateString("es-ES")+" "+d.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+}
+function roRow(label, value){
+  return `<div class="ro-row"><span class="ro-label">${escapeHtml(label)}</span><span class="ro-val">${escapeHtml(value||"—")}</span></div>`;
+}
+function alertasLead(lead){
+  const out = [];
+  const ahora = new Date();
+  if(lead.proxima_accion_fecha && lead.estado !== "Contratado" && !lead.no_contactar){
+    const d = new Date(lead.proxima_accion_fecha);
+    if(!isNaN(d) && d < ahora) out.push(`<div class="aviso-box"><b>Próxima acción vencida</b> (${escapeHtml(fmtProxima(lead.proxima_accion_fecha))}). Revisa las observaciones y gestiónalo hoy.</div>`);
+  }
+  if(!lead.proxima_accion_fecha && lead.estado !== "Contratado" && !lead.no_contactar){
+    out.push(`<div class="aviso-box" style="background:var(--amber-bg,#FFF4DC);border-left-color:var(--amber);color:#6b4a00;"><b>Sin próxima acción agendada.</b> Todo lead activo debe tener una fecha de siguiente contacto.</div>`);
+  }
+  return out.join("");
+}
+function ultimaGestion(lead){
+  const ult = lead.observaciones.length ? lead.observaciones[lead.observaciones.length-1].ts : lead.fecha_hora_entrada;
+  const dias = Math.floor((Date.now()-new Date(ult).getTime())/86400000);
+  return `${fmtDateTime(ult)} (${dias<=0?"hoy":"hace "+dias+" día"+(dias===1?"":"s")})`;
+}
+
 function renderLeadDetail(){
   const lead = getCurrentLead();
   if(!lead) return `<p>Lead no encontrado. <button class="btn btn-outline" onclick="goTo('leads')">Volver</button></p>`;
-  const estadoOptions = Object.keys(ESTADOS).map(e=>`<option value="${e}" ${lead.estado===e?"selected":""}>${e}</option>`).join("");
   const logs = [...lead.observaciones].reverse().map(o=>`
     <div class="log-entry">
-      <div class="meta">${fmtDateTime(o.ts)} · ${escapeHtml(o.user)}</div>
+      <div class="meta">${fmtDateTime(o.ts)} · ${escapeHtml(o.user)}${o.perfil?" ("+escapeHtml(o.perfil)+")":""}</div>
       <div class="txt">${escapeHtml(o.text)}</div>
     </div>`).join("") || `<p class="muted small">Sin observaciones todavía.</p>`;
+
+  const permitidos = estadosPermitidos();
+  const estadoOptions = Object.keys(ESTADOS).map(e=>{
+    const ok = permitidos.includes(e) || e===lead.estado;
+    return `<option value="${escapeHtml(e)}" ${lead.estado===e?"selected":""} ${ok?"":"disabled"}>${escapeHtml(e)}${(!permitidos.includes(e) && e!==lead.estado)?" (otro perfil)":""}</option>`;
+  }).join("");
+  const guia = (GUIA_ESTADO[lead.estado]||[]).map(g=>`<li>${escapeHtml(g)}</li>`).join("");
+
+  const panelGestion = lead.no_contactar
+    ? `<div class="aviso-box"><b>NO VOLVER A CONTACTAR</b> — lead bloqueado. Solo se pueden añadir observaciones.</div>`
+    : puedeGestionar() ? `
+      <div class="gestion-box">
+        <div class="kicker">Gestión del lead · ${escapeHtml(perfilActual().label)}</div>
+        <div class="field"><label>Estado</label><select id="g-estado" onchange="gestionEstadoChange()">${estadoOptions}</select></div>
+        <div class="field"><label>Fecha de la próxima acción</label><input type="datetime-local" id="g-fecha" value="${escapeHtml(lead.proxima_accion_fecha||"")}"/></div>
+        <div class="field"><label>Comentario <span class="muted small" id="g-coment-req">(opcional)</span></label><textarea id="g-coment" rows="2" placeholder="Motivo del cambio, resultado de la llamada…"></textarea></div>
+        <button class="btn btn-primary" onclick="registrarGestion()">Registrar cambio</button>
+        <p class="small muted" style="margin-top:8px;">El cambio queda como una línea más en observaciones (quién, cuándo, valor anterior y nuevo). No se puede editar ni borrar.</p>
+        <div style="margin-top:10px;"><label class="small"><input type="checkbox" onchange="markNoContactar(this.checked)"/> Marcar NO VOLVER A CONTACTAR (irreversible)</label></div>
+      </div>`
+      : "";
 
   return `
   <button class="btn btn-ghost btn-sm" onclick="goTo('leads')">← Volver al panel</button>
   <div class="grid-2" style="margin-top:14px;align-items:flex-start;">
     <div class="card">
-      <div class="kicker">Ficha del lead</div>
+      <div class="kicker">Ficha del lead · solo lectura</div>
       <h2>${escapeHtml(lead.nombre_apellidos||"Sin nombre")}</h2>
       <p class="small muted">${escapeHtml(lead.id_lead)} · creado ${fmtDateTime(lead.fecha_hora_entrada)}</p>
-
-      <div class="field"><label>Teléfono</label><input type="text" value="${escapeHtml(lead.telefono)}" onchange="updateLeadField('telefono', this.value)"/></div>
-      <div class="field"><label>DNI / NIE</label><input type="text" value="${escapeHtml(lead.dni_nie||"")}" onchange="updateLeadField('dni_nie', this.value)"/></div>
-      <div class="field"><label>Email</label><input type="text" value="${escapeHtml(lead.email||"")}" onchange="updateLeadField('email', this.value)"/></div>
-      <div class="field"><label>¿Ya es paciente del hospital?</label>
-        <select onchange="updateLeadField('es_paciente_hospital', this.value)">
-          ${["Sí, ya es paciente de HCB","No, paciente nuevo","No lo sabe / no consta"].map(o=>`<option ${lead.es_paciente_hospital===o?"selected":""}>${o}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field"><label>Categoría</label>
-        <select onchange="updateLeadField('categoria', this.value)">
-          ${["Servicios del Hospital","Planes de Salud","Harmony","Sin clasificar"].map(c=>`<option ${lead.categoria===c?"selected":""}>${c}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field"><label>Canal</label><input type="text" value="${escapeHtml(lead.canal)}" onchange="updateLeadField('canal', this.value)"/></div>
-      <div class="field"><label>Centro</label>
-        <select onchange="updateLeadField('centro', this.value)">
-          <option value="" ${!lead.centro?"selected":""}>— Sin especificar —</option>
-          ${CENTROS_HCB.map(c=>`<option value="${escapeHtml(c)}" ${lead.centro===c?"selected":""}>${escapeHtml(c)}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field"><label>Unidad / Programa de interés</label><input type="text" value="${escapeHtml(lead.unidad_plan_interes)}" onchange="updateLeadField('unidad_plan_interes', this.value)"/></div>
-      <div class="field"><label>¿Tiene seguro?</label>
-        <select onchange="updateLeadField('tiene_seguro', this.value)">
-          <option ${lead.tiene_seguro==="Sí"?"selected":""}>Sí</option>
-          <option ${lead.tiene_seguro==="No"?"selected":""}>No</option>
-        </select>
-      </div>
-      <div class="field"><label>Agente asignado</label><input type="text" value="${escapeHtml(lead.agente_asignado)}" onchange="updateLeadField('agente_asignado', this.value)"/></div>
-
-      <div class="field">
-        <label>Estado</label>
-        ${lead.no_contactar ? `<div class="aviso-box"><b>NO VOLVER A CONTACTAR</b> — estado bloqueado.</div>` : `
-        <select onchange="updateLeadEstado(this.value)">${estadoOptions}</select>`}
-      </div>
-      <div class="field"><label>Próxima acción</label>
-        <input type="datetime-local" value="${lead.proxima_accion_fecha||""}" ${lead.no_contactar?"disabled":""} onchange="updateLeadField('proxima_accion_fecha', this.value)"/>
+      ${alertasLead(lead)}
+      <div class="ro-grid">
+        ${roRow("Teléfono", lead.telefono)}
+        ${roRow("DNI / NIE", lead.dni_nie)}
+        ${roRow("Email", lead.email)}
+        ${roRow("¿Ya es paciente del hospital?", lead.es_paciente_hospital)}
+        ${roRow("Categoría", lead.categoria)}
+        ${roRow("Canal de entrada", lead.canal)}
+        ${roRow("Centro", lead.centro)}
+        ${roRow("Unidad / Programa de interés", lead.unidad_plan_interes)}
+        ${roRow("Motivo de la llamada", lead.motivo_llamada)}
+        ${roRow("¿Tiene seguro?", lead.tiene_seguro)}
+        ${roRow("Agente que lo registró", lead.agente_asignado)}
+        <div class="ro-row"><span class="ro-label">Estado actual</span><span class="ro-val">${estadoBadge(lead.estado)} <span class="small muted">· responsable: ${escapeHtml((ESTADOS[lead.estado]||{}).resp||"—")} · plazo: ${escapeHtml((ESTADOS[lead.estado]||{}).sla||"—")}</span></span></div>
+        ${roRow("Próxima acción", fmtProxima(lead.proxima_accion_fecha))}
+        ${roRow("Última gestión registrada", ultimaGestion(lead))}
       </div>
 
-      <div class="field">
-        <label><input type="checkbox" ${lead.no_contactar?"checked disabled":""} onchange="markNoContactar(this.checked)"/> No volver a contactar (irreversible desde esta pantalla)</label>
-      </div>
+      ${panelGestion}
+
+      ${guia && !lead.no_contactar ? `<div class="guia-box"><div class="kicker">Qué hacer con este lead</div><ul>${guia}</ul>
+        <p class="small muted" style="margin:6px 0 0;">Trabaja la lista empezando por el último lead y avanza uno a uno. Contacta siempre en una franja distinta a la de la última llamada.</p></div>` : ""}
 
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-amber btn-sm" ${lead.no_contactar?"disabled":""} onclick="showWaModal('WA-01')">Ver WA-01 Bienvenida</button>
@@ -1513,37 +1620,63 @@ function renderLeadDetail(){
 
     <div class="card">
       <div class="kicker">Observaciones — histórico, no editable</div>
-      <p class="small muted">Solo se puede añadir. Ninguna línea existente se puede editar ni borrar.</p>
-      <div class="log-list">${logs}</div>
-      <div class="add-comment-row">
+      <p class="small muted">Solo se puede añadir. Ninguna línea existente se puede editar ni borrar. Cada línea guarda fecha, hora y persona.</p>
+      <div class="add-comment-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div class="quick-notes">${NOTAS_RAPIDAS.map((n,i)=>`<button class="btn btn-ghost btn-sm" onclick="notaRapida(${i})">${escapeHtml(n)}</button>`).join("")}</div>
         <textarea id="new-comment" rows="2" placeholder="Añadir comentario…"></textarea>
-        <button class="btn btn-primary" onclick="submitComment()">Enviar</button>
+        <button class="btn btn-primary" onclick="submitComment()">Añadir observación</button>
       </div>
+      <div class="log-list" style="margin-top:12px;">${logs}</div>
     </div>
   </div>`;
 }
 
-async function updateLeadField(field, value){
-  const lead = getCurrentLead(); if(!lead) return;
-  lead[field] = value;
-  await saveLead(lead);
+function notaRapida(i){
+  const t = el("new-comment"); if(!t) return;
+  t.value = (t.value ? t.value.trim()+" " : "") + NOTAS_RAPIDAS[i];
+  t.focus();
 }
-async function updateLeadEstado(nuevoEstado){
+function gestionEstadoChange(){
+  const e = el("g-estado").value;
+  const req = el("g-coment-req");
+  const obligatorio = (e==="No interesado" || e==="Queja / Sugerencia");
+  if(req) req.textContent = obligatorio ? "(obligatorio: indica el motivo)" : "(opcional)";
+  if(e==="No interesado" && !el("g-fecha").value){
+    const d = new Date(); d.setMonth(d.getMonth()+6); d.setHours(10,0,0,0);
+    const p = n=>String(n).padStart(2,"0");
+    el("g-fecha").value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T10:00`;
+  }
+}
+async function registrarGestion(){
   const lead = getCurrentLead(); if(!lead) return;
-  const anterior = lead.estado;
+  if(!puedeGestionar() || lead.no_contactar){ alert("Tu perfil no puede realizar este cambio."); return; }
+  const nuevoEstado = el("g-estado").value;
+  const nuevaFecha = el("g-fecha").value;
+  const coment = el("g-coment").value.trim();
+  if(!estadosPermitidos().includes(nuevoEstado) && nuevoEstado!==lead.estado){ alert("Tu perfil no puede asignar ese estado."); return; }
+  const cambiaEstado = nuevoEstado !== lead.estado;
+  const cambiaFecha = (nuevaFecha||"") !== (lead.proxima_accion_fecha||"");
+  if(!cambiaEstado && !cambiaFecha){ alert("No hay ningún cambio que registrar."); return; }
+  if(cambiaEstado && (nuevoEstado==="No interesado" || nuevoEstado==="Queja / Sugerencia") && !coment){ alert("Indica el motivo en el comentario."); return; }
+  if(nuevoEstado!=="Contratado" && !nuevaFecha){ alert("Indica la fecha de la próxima acción."); return; }
+  const partes = [];
+  if(cambiaEstado) partes.push(`Cambio de estado: "${lead.estado}" → "${nuevoEstado}"`);
+  if(cambiaFecha) partes.push(`Próxima acción: "${fmtProxima(lead.proxima_accion_fecha)}" → "${fmtProxima(nuevaFecha)}"`);
+  if(coment) partes.push(`Comentario: ${coment}`);
   lead.estado = nuevoEstado;
-  await addObservacion(lead, `Cambio de estado: "${anterior}" → "${nuevoEstado}".`);
-  const waCode = ESTADO_A_WA[nuevoEstado];
+  lead.proxima_accion_fecha = nuevaFecha;
+  await addObservacion(lead, partes.join(" · ")+".");
   await loadAllLeads();
   render();
-  if(waCode) showWaModal(waCode);
+  if(cambiaEstado && ESTADO_A_WA[nuevoEstado]) showWaModal(ESTADO_A_WA[nuevoEstado]);
 }
 async function markNoContactar(checked){
   if(!checked) return;
+  if(!puedeGestionar()){ render(); return; }
   if(!confirm("Esta acción es irreversible desde esta pantalla. ¿Confirmas marcar NO VOLVER A CONTACTAR?")) { render(); return; }
   const lead = getCurrentLead(); if(!lead) return;
   lead.no_contactar = true;
-  await addObservacion(lead, "Marcado NO VOLVER A CONTACTAR a petición del paciente.");
+  await addObservacion(lead, "NO VOLVER A CONTACTAR.");
   await loadAllLeads();
   render();
 }
@@ -1580,7 +1713,7 @@ function renderModal(){
   if(APP.modal.type === "wa"){
     const t = WA_TEMPLATES[APP.modal.code];
     const lead = getCurrentLead();
-    const vars = lead ? {nombre:lead.nombre_apellidos, plan:lead.unidad_plan_interes, enlace:"https://harmony.hcb.es/reserva", fecha:fmtDateTime(lead.proxima_accion_fecha), centro:"HCB"} : {nombre:"{{nombre}}", plan:"{{plan}}", enlace:"{{enlace}}", fecha:"{{fecha}}", centro:"{{centro}}"};
+    const vars = lead ? {nombre:lead.nombre_apellidos, plan:lead.unidad_plan_interes, enlace:"https://estetica.hcb.es/reserva", fecha:fmtDateTime(lead.proxima_accion_fecha), centro:"HCB"} : {nombre:"{{nombre}}", plan:"{{plan}}", enlace:"{{enlace}}", fecha:"{{fecha}}", centro:"{{centro}}"};
     const texto = fillTemplate(t.texto, vars);
     return `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
       <div class="modal">
