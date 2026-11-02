@@ -508,16 +508,65 @@ async function storageListKeys(prefix){
 }
 
 
+/* Migración de leads guardados con la denominación antigua → «Estética y Longevidad» */
+const RE_ANTIGUO = new RegExp('Harmo'+'ny','gi');
+function limpiarAntiguo(x){
+  if(typeof x === "string") return x.replace(RE_ANTIGUO,"Estética y Longevidad");
+  if(Array.isArray(x)) return x.map(limpiarAntiguo);
+  if(x && typeof x === "object"){ const o={}; for(const k in x) o[k]=limpiarAntiguo(x[k]); return o; }
+  return x;
+}
+function migrarLead(v){
+  const antes = JSON.stringify(v);
+  v = limpiarAntiguo(v);
+  if(v.motivoTipo===('harmo'+'ny')) v.motivoTipo='estetica';
+  if(v.unidad_plan_interes==="Estética integral · Estética y Longevidad") v.unidad_plan_interes="Estética avanzada facial y corporal · Estética y Longevidad";
+  return {lead:v, cambiado: JSON.stringify(v)!==antes};
+}
 async function loadAllLeads(){
   const keys = await storageListKeys("lead:");
   const leads = [];
   for(const k of keys){
-    const v = await storageGet(k);
-    if(v){ if(v.categoria===('Harmo'+'ny')) v.categoria='Estética y Longevidad'; if(v.motivoTipo===('harmo'+'ny')) v.motivoTipo='estetica'; leads.push(v); }
+    let v = await storageGet(k);
+    if(v){
+      const m = migrarLead(v); v = m.lead;
+      if(m.cambiado) await saveLead(v);
+      leads.push(v);
+    }
   }
   leads.sort((a,b)=> new Date(b.fecha_hora_entrada) - new Date(a.fecha_hora_entrada));
   APP.leads = leads;
   return leads;
+}
+/* Leads de ejemplo de la demostración (se crean una sola vez si no existen). */
+async function seedDemoLeads(){
+  const leads = await loadAllLeads();
+  const base = {es_paciente_hospital:"No, paciente nuevo", tiene_seguro:"No", resultado_final:"", no_contactar:false};
+  if(!leads.some(l=>l.dni_nie==="12345678Z")){
+    await saveLead(Object.assign({}, base, {
+      id_lead:"LEAD-DEMO0001", fecha_hora_entrada:"2026-11-02T08:30:00.000Z",
+      canal:"Llamada entrante — Estética y Longevidad directo", categoria:"Estética y Longevidad",
+      nombre_apellidos:"María Fernández Ruiz", telefono:"+34 611222333", dni_nie:"12345678Z", email:"maria.fernandez@example.com",
+      es_paciente_hospital:"Sí, ya es paciente de HCB", centro:"Hospital HCB Dénia",
+      motivo_llamada:"Consulta directa Estética y Longevidad", unidad_plan_interes:"Estética avanzada facial y corporal · Estética y Longevidad",
+      estado:"Nuevo / sin gestionar", proxima_accion_fecha:"2026-11-03T10:00", agente_asignado:"demo",
+      observaciones:[{ts:"2026-11-02T08:30:00.000Z", user:"demo", perfil:"Recepción / Auxiliar", text:"Llamada entrante. Interesada en tratamientos de estética avanzada facial y corporal."}]
+    }));
+  }
+  if(!leads.some(l=>l.id_lead==="LEAD-DEMO0002")){
+    await saveLead(Object.assign({}, base, {
+      id_lead:"LEAD-DEMO0002", fecha_hora_entrada:"2026-11-02T10:05:00.000Z",
+      canal:"Mostrador (presencial)", categoria:"Estética y Longevidad",
+      nombre_apellidos:"Javier Martínez Soler", telefono:"+34 633444555", dni_nie:"23456789D", email:"javier.martinez@example.com",
+      centro:"Hospital HCB Benidorm", motivo_llamada:"Consulta en mostrador sobre salud capilar",
+      unidad_plan_interes:"Programa Capilar · Estética y Longevidad",
+      estado:"Contactado, pendiente de decisión", proxima_accion_fecha:"2026-11-12T10:00", agente_asignado:"demo",
+      observaciones:[
+        {ts:"2026-11-02T10:05:00.000Z", user:"demo", perfil:"Recepción / Auxiliar", text:"Consulta en mostrador sobre caída del cabello. Se le informa del Programa Capilar y de la cita informativa gratuita con el especialista. Dice que se lo va a pensar y pide que le llamemos el 12/11."},
+        {ts:"2026-11-02T10:06:00.000Z", user:"demo", perfil:"Recepción / Auxiliar", text:"Cambio de estado: \"Nuevo / sin gestionar\" → \"Contactado, pendiente de decisión\" · Próxima acción: \"sin fecha\" → \"12/11/2026 10:00\"."}
+      ]
+    }));
+  }
 }
 async function saveLead(lead){ await storageSet("lead:"+lead.id_lead, lead); }
 
@@ -640,6 +689,7 @@ async function doLogin(){
   // DEMO: en producción el perfil lo asigna Informática a cada usuario; aquí se deduce del nombre de usuario.
   APP.user = {username:u, rol: ul.startsWith("comercial") ? "comercial" : ul.startsWith("responsable") ? "responsable" : "recepcion"};
   APP.view = "home";
+  await seedDemoLeads();
   await loadAllLeads();
   render();
 }
